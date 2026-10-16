@@ -1,0 +1,21 @@
+appId: com.blindgap.pet
+productName: 盒隙桌宠
+copyright: Copyright © 2026 BLINDGAP
+directories:
+  output: release
+  buildResources: public/icons
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+mac:
+  category: public.app-category.entertainment
+  target:
+    - dmg
+    - zip
+  icon: public/icons/icon-512.png
+win:
+  target:
+    - nsis
+    - zip
+  icon: public/icons/icon-512.png

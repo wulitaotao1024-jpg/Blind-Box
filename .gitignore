@@ -37,3 +37,8 @@ pnpm-debug.log*
 .eslintcache
 *.tsbuildinfo
 .vite
+
+# 桌宠本地大文件 / 沙箱产物（不入库）
+.u2net/
+.electron-cache/
+.sandboxhome/
