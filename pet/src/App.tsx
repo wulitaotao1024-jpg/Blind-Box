@@ -26,6 +26,7 @@ export default function App() {
   const [celebrating, setCelebrating] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<any>(null)
   const [showHint, setShowHint] = useState(true)
+  const [uiVisible, setUiVisible] = useState(true)
 
   const drag = useRef({ active: false, px: 0, py: 0, x: 0, y: 0, moved: 0 })
   const speechTimer = useRef<number | undefined>(undefined)
@@ -107,6 +108,18 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [])
 
+  // 纯净模式：8 秒无操作隐藏顶栏/提示，只留宠物悬浮；点屏幕唤回
+  const uiTimer = useRef<number | undefined>(undefined)
+  const wakeUi = useCallback(() => {
+    setUiVisible(true)
+    window.clearTimeout(uiTimer.current)
+    uiTimer.current = window.setTimeout(() => setUiVisible(false), 8000)
+  }, [])
+  useEffect(() => {
+    wakeUi()
+    return () => window.clearTimeout(uiTimer.current)
+  }, [wakeUi])
+
   const speak = useCallback(() => {
     const lines = char.lines
     setSpeech({ text: lines[Math.floor(Math.random() * lines.length)], key: Date.now() })
@@ -153,13 +166,16 @@ export default function App() {
       if (r.outcome === 'accepted') setInstallPrompt(null)
     } else {
       alert(
-        'iOS：点浏览器底部「分享」→「添加到主屏幕」。\n安卓 / 桌面 Chrome：点地址栏右侧的「安装」图标。',
+        '此设备无法一键安装（iOS 不支持 / 或因 HTTP 限制）：\n\n【iPhone】点浏览器底部「分享」图标 → 选「添加到主屏幕」\n【安卓/电脑 Chrome】点地址栏右侧「⋯」或「⊕」→ 选「安装应用 / 添加到主屏幕」',
       )
     }
   }
 
   return (
-    <div className="pet-app">
+    <div
+      className={'pet-app' + (uiVisible ? '' : ' ui-hidden')}
+      onPointerDown={wakeUi}
+    >
       <div className="topbar">
         <div className="chars">
           {CHARACTERS.map((c, i) => (
