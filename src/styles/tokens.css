@@ -31,12 +31,18 @@
 
 html, body, #root { height: 100%; }
 
+html, body {
+  overflow-x: hidden;
+}
 body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+  /* 禁止移动端长按/双击选中与缩放干扰手势 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 button {
