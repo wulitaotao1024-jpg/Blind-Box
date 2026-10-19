@@ -1,12 +1,16 @@
 import { LORE } from '../data/lore'
 import { buildNarrationText } from '../logic/narration'
 import { useNarrator } from '../hooks/useNarrator'
+import { useStoryPlayer } from '../hooks/useStoryPlayer'
 import type { IpDef } from '../logic/types'
 
-// F9 山海经手札：出处 + 原文 + 白话故事 + 听故事（TTS）
+// F9 山海经手札：出处 + 原文 + 白话故事 + 听故事
+// 音频优先播放预渲染配音（edge-tts 神经语音·低沉解说/青年男声双声线），
+// 无预渲染文件时回退浏览器 speechSynthesis（useNarrator）
 export default function LorePanel({ ip }: { ip: IpDef }) {
-  const narrator = useNarrator()
   const lore = ip.lore ?? LORE[ip.id]
+  const player = useStoryPlayer({ deep: lore?.audio, bright: lore?.audioAlt })
+  const narrator = useNarrator()
 
   if (!lore) return null
 
@@ -24,7 +28,54 @@ export default function LorePanel({ ip }: { ip: IpDef }) {
 
       {lore.sourceNote && <p className="lore__note">考据备注：{lore.sourceNote}</p>}
 
-      {narrator.supported ? (
+      {player.supported ? (
+        <div className="lore__audio">
+          {player.playing && !player.paused ? (
+            <button className="btn btn--ghost lore__btn" onClick={player.pause}>
+              暂停
+            </button>
+          ) : player.playing && player.paused ? (
+            <button className="btn btn--ghost lore__btn" onClick={player.resume}>
+              继续
+            </button>
+          ) : (
+            <button className="btn btn--gold lore__btn" onClick={player.play}>
+              听故事
+            </button>
+          )}
+          {player.playing && (
+            <button className="btn btn--ghost lore__btn" onClick={player.stop}>
+              停止
+            </button>
+          )}
+          {player.switchable && (
+            <div className="lore__voices" role="group" aria-label="切换声线">
+              <button
+                className={`lore__voice${player.voice === 'deep' ? ' is-on' : ''}`}
+                onClick={() => player.chooseVoice('deep')}
+                aria-pressed={player.voice === 'deep'}
+              >
+                低沉解说
+              </button>
+              <button
+                className={`lore__voice${player.voice === 'bright' ? ' is-on' : ''}`}
+                onClick={() => player.chooseVoice('bright')}
+                aria-pressed={player.voice === 'bright'}
+              >
+                青年男声
+              </button>
+            </div>
+          )}
+          <span className="lore__audio-hint">
+            {player.playing ? player.timeLabel || '播放中…' : '点击听这段山海经故事'}
+          </span>
+          {player.playing && (
+            <div className="lore__progress" role="progressbar" aria-valuenow={Math.round(player.progress * 100)}>
+              <i style={{ width: `${Math.round(player.progress * 100)}%` }} />
+            </div>
+          )}
+        </div>
+      ) : narrator.supported ? (
         <div className="lore__audio">
           {narrator.speaking && !narrator.paused ? (
             <button className="btn btn--ghost lore__btn" onClick={narrator.pause}>
@@ -35,7 +86,10 @@ export default function LorePanel({ ip }: { ip: IpDef }) {
               继续
             </button>
           ) : (
-            <button className="btn btn--gold lore__btn" onClick={() => narrator.speak(text)}>
+            <button
+              className="btn btn--gold lore__btn"
+              onClick={() => narrator.speak(text, { rate: 0.92, pitch: 0.9 })}
+            >
               听故事
             </button>
           )}
@@ -44,7 +98,9 @@ export default function LorePanel({ ip }: { ip: IpDef }) {
               停止
             </button>
           )}
-          <span className="lore__audio-hint">{narrator.speaking ? '朗读中…' : '点击听主理人讲这段故事'}</span>
+          <span className="lore__audio-hint">
+            {narrator.speaking ? '朗读中…' : '点击听主理人讲这段故事'}
+          </span>
         </div>
       ) : (
         <p className="lore__audio-hint">当前浏览器不支持语音朗读</p>

@@ -6,6 +6,8 @@ import type { Lore } from '../logic/types'
 export const LORE: Record<string, Lore> = {
   // —— 009 九尾狐 ——
   '009': {
+    audio: 'audio/009-yunjian.mp3',
+    audioAlt: 'audio/009-yunxi.mp3',
     source: '《山海经·南山经》',
     quote: '青丘之山，其阳多玉，其阴多青雘。有兽焉，其状如狐而九尾，其音如婴儿，能食人，食者不蛊。',
     story:
@@ -13,6 +15,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 010 白泽 ——
   '010': {
+    audio: 'audio/010-yunjian.mp3',
+    audioAlt: 'audio/010-yunxi.mp3',
     source: '《云笈七签》引《轩辕本纪》',
     quote: '帝巡狩，东至海，登桓山，于海滨得白泽神兽，能言，达于万物之情。自古精气为物、游魂为变者凡万一千五百二十种，白泽言之，退令图纪。',
     story:
@@ -20,6 +24,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 011 凤凰 ——
   '011': {
+    audio: 'audio/011-yunjian.mp3',
+    audioAlt: 'audio/011-yunxi.mp3',
     source: '《山海经·南山经》',
     quote: '丹穴之山，有鸟焉，其状如鸡，五采而文，名曰凤皇……是鸟也，饮食自然，自歌自舞，见则天下安宁。',
     story:
@@ -27,6 +33,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 012 巴蛇 ——
   '012': {
+    audio: 'audio/012-yunjian.mp3',
+    audioAlt: 'audio/012-yunxi.mp3',
     source: '《山海经·海内南经》',
     quote: '巴蛇食象，三岁而出其骨，君子服之，无心腹之疾。',
     story:
@@ -34,6 +42,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 013 精卫 ——
   '013': {
+    audio: 'audio/013-yunjian.mp3',
+    audioAlt: 'audio/013-yunxi.mp3',
     source: '《山海经·北山经》',
     quote: '炎帝之少女，名曰女娃。女娃游于东海，溺而不返，故为精卫，常衔西山之木石，以堙于东海。',
     story:
@@ -41,6 +51,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 014 饕餮 ——
   '014': {
+    audio: 'audio/014-yunjian.mp3',
+    audioAlt: 'audio/014-yunxi.mp3',
     source: '《山海经·北山经》',
     quote: '钩吾之山，有兽焉，其状如羊身人面，其目在腋下，虎齿人爪，其音如婴儿，名曰狍鸮，是食人。',
     story:
@@ -48,6 +60,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 015 烛龙 ——
   '015': {
+    audio: 'audio/015-yunjian.mp3',
+    audioAlt: 'audio/015-yunxi.mp3',
     source: '《山海经·海外北经》',
     quote: '钟山之神，名曰烛阴，视为昼，瞑为夜，吹为冬，呼为夏，不饮，不食，不息，息为风。',
     story:
@@ -55,6 +69,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 016 陆吾 ——
   '016': {
+    audio: 'audio/016-yunjian.mp3',
+    audioAlt: 'audio/016-yunxi.mp3',
     source: '《山海经·西山经》',
     quote: '昆仑之丘，是实惟帝之下都，神陆吾司之。其神状虎身而九尾，人面而虎爪。',
     story:
@@ -62,6 +78,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 017 鹿蜀 ——
   '017': {
+    audio: 'audio/017-yunjian.mp3',
+    audioAlt: 'audio/017-yunxi.mp3',
     source: '《山海经·南山经》',
     quote: '杻阳之山，有兽焉，其状如马而白首，其文如虎而赤尾，其音如谣，其名曰鹿蜀，佩之宜子孙。',
     story:
@@ -69,6 +87,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 018 狰 ——
   '018': {
+    audio: 'audio/018-yunjian.mp3',
+    audioAlt: 'audio/018-yunxi.mp3',
     source: '《山海经·西山经》',
     quote: '章莪之山……有兽焉，其状如赤豹，五尾一角，其音如击石，其名曰狰。',
     story:
@@ -76,6 +96,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 019 夔 ——
   '019': {
+    audio: 'audio/019-yunjian.mp3',
+    audioAlt: 'audio/019-yunxi.mp3',
     source: '《山海经·大荒东经》',
     quote: '东海中有流波山，入海七千里。其上有兽，状如牛，苍身而无角，一足，出入水则必风雨，其光如日月，其声如雷，其名曰夔。',
     story:
@@ -83,6 +105,8 @@ export const LORE: Record<string, Lore> = {
   },
   // —— 020 举父 ——
   '020': {
+    audio: 'audio/020-yunjian.mp3',
+    audioAlt: 'audio/020-yunxi.mp3',
     source: '《山海经·西山经》',
     quote: '崇吾之山……有兽焉，其状如禺而文臂，豹尾而善投，名曰举父。',
     story:

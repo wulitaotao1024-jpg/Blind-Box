@@ -13,14 +13,20 @@ export interface Narrator {
   stop: () => void
 }
 
-// 优先挑中文女声/普通话声线，找不到则用系统默认
+// 兜底声线挑选（仅在没有预渲染配音时使用）：
+// 优先「浑厚男声」——微软在线语音（Yunxi/Yunjian/Yunyang/Yunfeng/Yunye/Kangkang）
+// 或系统里名字带 male/男的声线，让兜底 TTS 也尽量接近纪录片解说感；
+// 找不到再按普通话 → 任意中文兜底
+const DEEP_MALE = /yunxi|yunjian|yunyang|yunfeng|yunye|kangkang|male|男|低沉|浑厚/i
+
 function pickVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices()
   if (!voices.length) return null
+  const zh = voices.filter((v) => /^zh/i.test(v.lang))
   return (
-    voices.find((v) => /zh[-_]CN/i.test(v.lang) && /female|婉|女/i.test(v.name)) ??
-    voices.find((v) => /zh[-_]CN/i.test(v.lang)) ??
-    voices.find((v) => /^zh/i.test(v.lang)) ??
+    zh.find((v) => DEEP_MALE.test(v.name)) ??
+    zh.find((v) => /zh[-_]CN/i.test(v.lang)) ??
+    zh[0] ??
     null
   )
 }

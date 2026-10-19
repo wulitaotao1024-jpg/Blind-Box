@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { IPS } from '../../data/ips'
 import { LORE } from '../../data/lore'
 
+// 资产守卫：lore 引用的 mp3 必须真实存在于 public/audio（vite 原生 glob，无需 node 类型）
+// 注意：vitest 下须用根相对模式，'../../' 相对模式匹配不到 public 目录
+const AUDIO_FILES = import.meta.glob('/public/audio/*.mp3')
+const hasAudioFile = (rel: string) => Object.keys(AUDIO_FILES).some((k) => k.endsWith(`/${rel}`))
+
 const SHENSHOU = IPS.filter((p) => p.num >= 9 && p.num <= 20)
 
 describe('F9 山海经手札 lore 数据', () => {
@@ -48,6 +53,18 @@ describe('F9 山海经手札 lore 数据', () => {
     const known = new Set(IPS.map((p) => p.id))
     for (const key of Object.keys(LORE)) {
       expect(known.has(key), `LORE 存在未知 key: ${key}`).toBe(true)
+    }
+  })
+
+  it('audio / audioAlt 引用的 mp3 必须真实存在于 public/audio', () => {
+    for (const ip of SHENSHOU) {
+      const l = LORE[ip.id]
+      for (const field of ['audio', 'audioAlt'] as const) {
+        const rel = l[field]
+        if (!rel) continue
+        expect(rel, `${ip.id} ${field} 必须以 audio/ 开头`).toMatch(/^audio\/[\w-]+\.mp3$/)
+        expect(hasAudioFile(rel), `${ip.id} ${field} 指向的文件不存在: public/${rel}`).toBe(true)
+      }
     }
   })
 })
