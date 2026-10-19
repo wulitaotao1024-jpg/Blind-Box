@@ -1,5 +1,30 @@
 /* 盒隙 BLINDGAP · 组件与屏幕样式 */
 
+/* ========== 滚动条（深色系 · 细） ==========
+   覆盖浏览器默认灰色滚动条：细（6px）、圆角、无灰，
+   取主题深色 token（ink-faint / ink-dim），悬停略亮。 */
+* {
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: var(--ink-faint) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-faint);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-dim);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ========== 品牌 ========== */
 .brand {
   display: flex;
@@ -437,6 +462,65 @@
   color: var(--c-limited);
   letter-spacing: 0.05em;
 }
+
+/* ========== F9 山海经手札（典籍区 · 玉色区别于主理人手记的金色） ========== */
+.lore {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--c-limited);
+  background: rgba(69, 224, 200, 0.05);
+  border-radius: 0 10px 10px 0;
+}
+.lore__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.lore__label {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--c-limited);
+  font-weight: 800;
+}
+.lore__source {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-align: right;
+}
+.lore__quote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 1px solid rgba(69, 224, 200, 0.25);
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+}
+.lore__story {
+  margin-top: 10px;
+  color: var(--ink-dim);
+  font-size: 13.5px;
+  line-height: 1.8;
+}
+.lore__note {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--c-heat);
+  opacity: 0.85;
+}
+.lore__audio {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.lore__btn { padding: 8px 16px; font-size: 13px; letter-spacing: 0.12em; }
+.lore__audio-hint { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.06em; }
 .reveal__actions {
   width: min(430px, 94vw);
   display: flex;
@@ -590,6 +674,13 @@
   gap: 12px;
 }
 .wall__actions .btn { flex: 1 1 120px; }
+.wall__sync-msg {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold, #f5c542);
+}
 
 /* ========== GuideOverlay 新手引导 ========== */
 .guide {

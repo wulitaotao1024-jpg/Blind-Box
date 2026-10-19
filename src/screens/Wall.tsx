@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import IpPortrait from '../components/IpPortrait'
+import LorePanel from '../components/LorePanel'
 import ModelViewer3D from '../components/ModelViewer3D'
 import RarityBadge from '../components/RarityBadge'
 import { IPS } from '../data/ips'
@@ -26,7 +27,29 @@ export default function Wall({
 }) {
   const [detail, setDetail] = useState<IpDef | null>(null)
   const [viewing3d, setViewing3d] = useState<IpDef | null>(null)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
   const p = progress(collected, IPS)
+
+  // 把已抽到角色推送到桌面宠（本地通道，仅开发/内网；生产走云端）
+  const syncToPet = async () => {
+    const ids = Array.from(collected)
+    const ips = ids
+      .map((id) => IPS.find((x) => x.id === id))
+      .filter(Boolean)
+      .map((ip) => ({ id: (ip as IpDef).id, name: (ip as IpDef).name, en: (ip as IpDef).en, rarity: (ip as IpDef).rarity, tagline: (ip as IpDef).tagline }))
+    try {
+      const res = await fetch('http://127.0.0.1:9876/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collected: ids, ips }),
+      })
+      const data = await res.json().catch(() => ({} as any))
+      setSyncMsg(data?.ok ? `已推送 ${ids.length} 位到桌宠 ✓` : '推送失败')
+    } catch {
+      setSyncMsg('桌宠未运行，请先启动桌宠')
+    }
+    window.setTimeout(() => setSyncMsg(null), 2600)
+  }
   const complete = isComplete(collected, IPS)
   const left = p.total - p.collected
 
@@ -72,8 +95,8 @@ export default function Wall({
       </div>
 
       <div className="wall__next-wave">
-        <span>街头邻里系列 · №009 起 · 每波 6-10 位</span>
-        <span>筹备中…</span>
+        <span>神兽系列 · №009–020 · 12 位已上线</span>
+        <span>集齐即端盒</span>
       </div>
 
       <div className="wall__actions">
@@ -84,7 +107,12 @@ export default function Wall({
           {shareCopied ? '链接已复制 ✓' : '分享 +1发'}
         </button>
         <button className="btn btn--ghost" onClick={onReplay}>重看故事</button>
+        <button className="btn btn--ghost" onClick={syncToPet} title="把已抽到角色推送到桌面宠">
+          同步到桌宠
+        </button>
       </div>
+
+      {syncMsg && <p className="wall__sync-msg">{syncMsg}</p>}
 
       <p className="wall__odds">
         概率公示：路面款 55% ｜ 限定 33% ｜ 狠货 10% ｜ 幽灵款 2%<br />
@@ -107,6 +135,7 @@ export default function Wall({
               <span className="reveal__en">{detail.en}</span>
             </h2>
             <p className="reveal__tagline">{detail.tagline}</p>
+            <LorePanel ip={detail} />
             <div className="reveal__note">
               <p className="reveal__note-label">主理人手记</p>
               {detail.note}

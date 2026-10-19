@@ -11,6 +11,16 @@ export interface IpDef {
   note: string // 主理人手记（2-3句）
   quote?: string // 开盒台词
   status: 'ready' | 'pending' // 素材是否已上线（pending=素材待补充）
+  lore?: Lore // 山海经手札（F9）：仅神兽系列配置
+}
+
+// 山海经手札（F9「抽盒即读经」）：典籍出处 + 原文 + 白话故事
+export interface Lore {
+  source: string // 典籍出处，如《山海经·南山经》
+  sourceNote?: string // 出处说明；非《山海经》名录的异兽必填
+  quote: string // 典籍原文摘录（不可篡改）
+  story: string // 白话故事（第六大道世界观）
+  audio?: string // 预留：正式版配音文件路径（MVP 用 TTS 朗读）
 }
 
 // 保底/抽盒状态：服务端持久化模型（MVP 用 localStorage 模拟）

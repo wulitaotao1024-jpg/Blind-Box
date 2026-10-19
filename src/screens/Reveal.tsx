@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import IpPortrait from '../components/IpPortrait'
+import LorePanel from '../components/LorePanel'
 import ModelViewer3D from '../components/ModelViewer3D'
 import MysteryBox from '../components/MysteryBox'
 import RarityBadge from '../components/RarityBadge'
@@ -41,6 +42,8 @@ export default function Reveal({
           <span className="reveal__en">{ip.en}</span>
         </h2>
         <p className="reveal__tagline">{ip.tagline}</p>
+
+        <LorePanel ip={ip} />
 
         <div className="reveal__note">
           <p className="reveal__note-label">主理人手记</p>

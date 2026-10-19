@@ -45,25 +45,28 @@ describe('抽盒经济 boxReducer', () => {
     }
   })
 
-  it('空档位重映射：真实池无路面/幽灵在售时，路面→限定、幽灵→狠货，且只出 ready IP', () => {
+  it('空档位重映射：池无路面/幽灵在售时，路面→限定、幽灵→狠货，且只出 ready IP', () => {
+    // 神兽系列已补齐路面款，故用「剔除路面+幽灵」的合成池专门验证重映射逻辑本身
+    const noTierPool = readyPool(IPS).filter((p) => p.rarity !== 'street' && p.rarity !== 'ghost')
     const base = { ...createBoxState(), firstDrawDone: true }
     // rng=0.5 → 概率层rollRarity=street → 池空 → 重映射 limited
-    const r1 = draw({ ...base }, always(0.5), IPS)
+    const r1 = draw({ ...base }, always(0.5), noTierPool)
     expect(r1.result.rarity).toBe('limited')
     // rng=0.01 → rollRarity=ghost → 池空 → 重映射 heat
-    const r2 = draw({ ...base }, always(0.01), IPS)
+    const r2 = draw({ ...base }, always(0.01), noTierPool)
     expect(r2.result.rarity).toBe('heat')
   })
 
   it('只从 ready 池抽取（pending 的 003/004/008 不可抽出）', () => {
     const pool = readyPool(IPS)
     expect(pool.every((p) => p.status === 'ready')).toBe(true)
+    const poolIds = pool.map((p) => p.id)
     let s = { ...createBoxState(), firstDrawDone: true }
     for (let i = 0; i < 30; i++) {
       const r = draw(s, Math.random, IPS)
       s = r.next
       expect(pool.some((p) => p.id === r.result.ipId)).toBe(true)
-      expect(['000', '001', '002', '005', '006', '007']).toContain(r.result.ipId)
+      expect(poolIds).toContain(r.result.ipId)
     }
   })
 

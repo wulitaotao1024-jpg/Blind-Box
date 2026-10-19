@@ -18,7 +18,7 @@ describe('图鉴 collection', () => {
   it('progress 计算点亮进度', () => {
     const p = progress(new Set(['000', '001']), IPS)
     expect(p.collected).toBe(2)
-    expect(p.total).toBe(9)
+    expect(p.total).toBe(21)
   })
 
   it('isComplete 端盒判定：集齐当期全部在售（ready）IP', () => {
