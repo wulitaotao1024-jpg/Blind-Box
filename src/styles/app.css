@@ -270,7 +270,12 @@
   0%, 100% { opacity: 0.12; transform: translate(-50%, -50%) scale(0.65) rotate(0deg); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(18deg); }
 }
+/* 副标题三段式：grid 把中点「·」钉在容器正中（=门缝 x），左文右对齐、右文左对齐，
+   门缝只过小圆点不过 IP；1fr 两侧等宽，任何屏宽中点都精准落在缝上 */
 .landing__sub {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
   margin-top: 12px;
   color: rgba(255, 231, 188, 0.92);
   text-shadow: 0 1px 10px rgba(30, 12, 40, 0.65);
@@ -278,6 +283,9 @@
   letter-spacing: 0.22em;
   animation: rise 0.8s 1.25s ease both;
 }
+.landing__sub-l { text-align: right; }
+.landing__sub-m { padding: 0 12px; }
+.landing__sub-r { text-align: left; }
 
 /* ---------- 双扇大门（深色魔法风，居中矗立，圆拱顶部完整露出） ---------- */
 .doors {
@@ -401,11 +409,6 @@
   transform: translateX(-50%);
   background: linear-gradient(180deg, rgba(255, 244, 200, 0.15), #ffe9a8 30%, #ffd76a 70%, rgba(255, 244, 200, 0.15));
   box-shadow: 0 0 16px rgba(255, 215, 106, 0.85), 0 0 40px rgba(255, 200, 90, 0.4);
-  /* 上半段遮罩：缝光从门中下部（约把手高度）起才亮起，标题/副标题居中区不被扫字。
-     副标题底部最坏占缝高约 42.5%（1440×500 矮窗），故 44% 以下全透明；
-     mask 会连同 box-shadow 光晕一起裁剪，文字区干净。 */
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 44%, #000 54%, #000 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, transparent 44%, #000 54%, #000 100%);
   animation: seam-breathe 2.6s ease-in-out infinite;
   pointer-events: none;
 }

@@ -76,7 +76,13 @@ export default function Landing({ onStart }: { onStart: () => void }) {
         <h1 className="landing__title" aria-label={HOME_TITLE}>
           <CascadeTitle text={HOME_TITLE} />
         </h1>
-        <p className="landing__sub">第六大道 · IP 收藏宇宙</p>
+        {/* 三段式副标题：左「第六大道」/ 中「·」/ 右「IP 收藏宇宙」。
+            中点用 grid 钉在正中=门缝位置，门缝只过小圆点、不过 IP（见 .landing__sub CSS） */}
+        <p className="landing__sub">
+          <span className="landing__sub-l">第六大道</span>
+          <span className="landing__sub-m">·</span>
+          <span className="landing__sub-r">IP 收藏宇宙</span>
+        </p>
       </div>
     </div>
   )
