@@ -155,14 +155,13 @@
 }
 .brand--corner .brand__zh { font-size: 20px; }
 .brand--corner .brand__en { font-size: 10px; }
-/* 标题悬浮层：上部居中，不拦截门的点击 */
+/* 标题悬浮层：上部居中（left/right 双定位，避免被 rise 动画的 transform 覆盖居中） */
 .landing__head {
   position: absolute;
-  top: 12vh;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 11vh;
+  left: 0;
+  right: 0;
   z-index: 40;
-  width: 100%;
   padding: 0 18px;
   pointer-events: none;
   animation: rise 0.8s ease both;
@@ -183,37 +182,47 @@
   animation: rise 0.8s 0.15s ease both;
 }
 
-/* ---------- 双扇大门（整个背景） ---------- */
+/* ---------- 双扇大门（深色魔法风，居中矗立，两侧留暗墙） ---------- */
 .doors {
   position: absolute;
   inset: 0;
+  display: flex;
+  justify-content: center;
   perspective: 1500px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(120, 90, 200, 0.14), transparent 55%),
+    radial-gradient(100% 70% at 50% 110%, rgba(255, 170, 80, 0.06), transparent 60%),
+    linear-gradient(180deg, #171128, #0e0a18 60%, #130d1d);
 }
 .doors__leaf {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50.2%;
+  position: relative;
+  width: min(50%, 480px);
+  height: 100%;
   border: none;
   padding: 0;
   cursor: pointer;
   background:
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 96px),
-    linear-gradient(180deg, rgba(255, 232, 180, 0.10), rgba(255, 232, 180, 0) 30%),
-    linear-gradient(180deg, #6d492e, #4c3320 60%, #3c2818);
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.35);
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 2px, transparent 2px 84px),
+    linear-gradient(180deg, rgba(150, 120, 255, 0.10), rgba(150, 120, 255, 0) 32%),
+    linear-gradient(180deg, #362519, #241811 55%, #180f0a);
+  box-shadow:
+    inset 0 0 140px rgba(0, 0, 0, 0.6),
+    inset 3px 0 0 rgba(255, 209, 128, 0.16),
+    0 0 60px rgba(0, 0, 0, 0.6);
   backface-visibility: hidden;
   -webkit-tap-highlight-color: transparent;
 }
 .doors__leaf--l {
-  left: 0;
   transform-origin: left center;
-  border-right: 2px solid rgba(0, 0, 0, 0.5);
+  border-right: 2px solid rgba(0, 0, 0, 0.6);
+  border-left: 1px solid rgba(255, 209, 128, 0.22);
+  border-radius: min(9vw, 120px) 0 0 0;
 }
 .doors__leaf--r {
-  right: 0;
   transform-origin: right center;
-  border-left: 2px solid rgba(0, 0, 0, 0.5);
+  border-left: 2px solid rgba(0, 0, 0, 0.6);
+  border-right: 1px solid rgba(255, 209, 128, 0.22);
+  border-radius: 0 min(9vw, 120px) 0 0;
 }
 /* 悬停微开，暗示可推 */
 .doors:not(.doors--open) .doors__leaf--l:hover { transform: rotateY(-4deg); }
@@ -224,14 +233,14 @@
 @keyframes doors-swing-l { to { transform: rotateY(-102deg); } }
 @keyframes doors-swing-r { to { transform: rotateY(102deg); } }
 
-/* 门板凹嵌（上拱下方） */
+/* 门板凹嵌（上拱下方，深色+金边） */
 .doors__panel {
   position: absolute;
   left: 16%;
   width: 68%;
-  background: linear-gradient(170deg, #503622, #3a2716);
-  border: 1px solid rgba(255, 214, 140, 0.22);
-  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 -2px 6px rgba(255, 220, 160, 0.08);
+  background: linear-gradient(170deg, #221510, #150c07);
+  border: 1px solid rgba(255, 209, 128, 0.26);
+  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.65), inset 0 -2px 6px rgba(255, 209, 128, 0.07);
 }
 .doors__panel--t {
   top: 10%;
@@ -307,24 +316,49 @@
   background: radial-gradient(circle, rgba(255, 240, 200, 0.95) 0%, rgba(255, 205, 120, 0.55) 34%, rgba(255, 170, 90, 0.16) 62%, transparent 76%);
   filter: blur(2px);
 }
-/* 两侧楼宇：向消失点收拢的梯形剪影 + 亮窗 */
-.street__row {
+/* 街道两侧的皮克斯小店：由近到远逐个变小（尺寸由组件内联样式控制） */
+.street__b {
   position: absolute;
-  top: 26%;
-  bottom: 0;
-  width: 52%;
+  background: linear-gradient(180deg, #2e2350, #1e1636 70%, #171029);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+/* 亮窗网格 */
+.street__b::before {
+  content: '';
+  position: absolute;
+  inset: 6% 10% 4%;
   background-image:
-    repeating-linear-gradient(0deg, rgba(255, 218, 150, 0.30) 0 3px, transparent 3px 30px),
-    repeating-linear-gradient(90deg, rgba(255, 218, 150, 0.30) 0 4px, transparent 4px 34px),
-    linear-gradient(200deg, #3d2c58, #241a3a 65%, #1b1430);
+    repeating-linear-gradient(0deg, rgba(255, 218, 150, 0.32) 0 3px, transparent 3px 22px),
+    repeating-linear-gradient(90deg, rgba(255, 218, 150, 0.32) 0 4px, transparent 4px 24px);
+  opacity: 0.55;
 }
-.street__row--l {
-  left: 0;
-  clip-path: polygon(0 16%, 34% 58%, 40% 100%, 0 100%);
+/* 近处最大的店：霓虹灯牌闪烁 */
+.street__b--flicker .street__sign {
+  animation: neon-flicker 3.4s ease-in-out infinite;
 }
-.street__row--r {
-  right: 0;
-  clip-path: polygon(100% 16%, 66% 58%, 60% 100%, 100% 100%);
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  88% { opacity: 1; }
+  90% { opacity: 0.35; }
+  92% { opacity: 1; }
+  95% { opacity: 0.55; }
+  97% { opacity: 1; }
+}
+/* 竖排霓虹灯牌（挂在店面上） */
+.street__sign {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+  writing-mode: vertical-rl;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  z-index: 2;
+  white-space: nowrap;
 }
 /* 路面：中间亮、两侧暗的纵深梯形 */
 .street__road {
