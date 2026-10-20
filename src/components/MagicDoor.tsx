@@ -21,10 +21,13 @@ export default function MagicDoor({ onOpen }: { onOpen: () => void }) {
 
   return (
     <div className={`doors${open ? ' doors--open' : ''}`}>
-      {/* 门后世界：皮克斯风第六大道街景（关门时隐藏）。transform-origin 与街道纵深推进的中心一致 */}
+      {/* 门后世界：皮克斯风第六大道街景（关门时隐藏）。推门完成前只透光，街景稍后才显影 */}
       <div className="street" aria-hidden="true">
         <img className="street__img" src="/img/street-dusk.jpg" alt="" draggable={false} />
       </div>
+
+      {/* 门缝光：门扇转动时从中间缝隙一点点涌出、渐渐变宽变亮的暖光（街景显影前唯一的可见内容） */}
+      <span className="doors__light" />
 
       {/* 双扇大门：居中矗立，底部落地、顶部留空让椭圆拱顶完整露出 */}
       <button

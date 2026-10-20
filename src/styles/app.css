@@ -229,11 +229,37 @@
 /* 悬停微开，暗示可推 */
 .doors:not(.doors--open) .doors__leaf--l:hover { transform: rotateY(-4deg); }
 .doors:not(.doors--open) .doors__leaf--r:hover { transform: rotateY(4deg); }
-/* 推开 */
-.doors--open .doors__leaf--l { animation: doors-swing-l 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards; pointer-events: none; }
-.doors--open .doors__leaf--r { animation: doors-swing-r 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards; pointer-events: none; }
+/* 推开：先转门 1.5s，门扇完全打开后隐藏（opacity/visibility），不再遮挡街景 */
+.doors--open .doors__leaf--l { animation: doors-swing-l 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.45s 1.5s ease-in forwards; pointer-events: none; }
+.doors--open .doors__leaf--r { animation: doors-swing-r 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.45s 1.5s ease-in forwards; pointer-events: none; }
 @keyframes doors-swing-l { to { transform: rotateY(-102deg); } }
 @keyframes doors-swing-r { to { transform: rotateY(102deg); } }
+@keyframes door-vanish { to { opacity: 0; visibility: hidden; } }
+
+/* 门缝光：转门期间从中间缝隙一点点涌出、渐渐变宽变亮；街景显影时融进光里 */
+.doors__light {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  background: radial-gradient(58% 46% at 50% 58%, rgba(255, 250, 232, 0.98) 0%, rgba(255, 220, 150, 0.85) 45%, rgba(255, 170, 90, 0.25) 75%, transparent 100%);
+  filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+}
+.doors--open .doors__light {
+  animation:
+    light-spill 1.5s 0.05s cubic-bezier(0.33, 0, 0.3, 1) forwards,
+    light-merge 0.9s 1.45s ease-out forwards;
+}
+@keyframes light-spill {
+  0% { opacity: 0; width: 4px; }
+  18% { opacity: 1; width: 9vw; }
+  100% { opacity: 1; width: 56vw; }
+}
+@keyframes light-merge { to { opacity: 0; } }
 
 /* 门板凹嵌（上拱下方，深色+金边） */
 .doors__panel {
@@ -286,23 +312,22 @@
   50% { opacity: 1; }
 }
 
-/* ---------- 门后街道（皮克斯风，近→远透视）。关门时隐藏，推门才亮起 ---------- */
+/* ---------- 门后街道（皮克斯风街景大图）。关门时隐藏；门完全打开后，街景从光里渐渐显影 ---------- */
 .street {
   position: absolute;
   inset: 0;
   transform-origin: 50% 58%;
-  filter: brightness(0.5) saturate(0.85);
+  filter: brightness(1.12) saturate(1.1);
   opacity: 0;
-  transition: opacity 0.5s ease;
 }
 .doors--open .street {
-  opacity: 1;
-  animation: street-in 2s 0.55s ease-out forwards;
+  animation: street-resolve 1.25s 1.45s ease-out forwards;
 }
-@keyframes street-in {
-  from { filter: brightness(0.5) saturate(0.85); transform: scale(1); }
-  60% { filter: brightness(1.05) saturate(1.05); transform: scale(1.18); }
-  to { filter: brightness(1.12) saturate(1.1); transform: scale(1.6); }
+/* 显影：过曝+重模糊 → 慢慢变清，伴随轻微推进（从暖光中浮现的感觉） */
+@keyframes street-resolve {
+  from { opacity: 0; filter: brightness(2.4) saturate(1.35) blur(14px); transform: scale(1.06); }
+  35% { opacity: 1; filter: brightness(1.8) saturate(1.18) blur(6px); }
+  to { opacity: 1; filter: brightness(1.12) saturate(1.1) blur(0); transform: scale(1.22); }
 }
 /* 街景大图（皮克斯风第六大道，AI 生成）：铺满门后，随开门动画向纵深推进 */
 .street__img {
@@ -325,7 +350,7 @@
   pointer-events: none;
 }
 .doors--open .doors__veil {
-  animation: veil-in 0.8s 2s ease-in forwards;
+  animation: veil-in 0.65s 2.05s ease-in forwards;
 }
 @keyframes veil-in {
   to { opacity: 1; }
