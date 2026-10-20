@@ -229,9 +229,9 @@
 /* 悬停微开，暗示可推 */
 .doors:not(.doors--open) .doors__leaf--l:hover { transform: rotateY(-4deg); }
 .doors:not(.doors--open) .doors__leaf--r:hover { transform: rotateY(4deg); }
-/* 推开：先转门 1.5s，门扇完全打开后快速隐藏（opacity/visibility），不再遮挡街景 */
-.doors--open .doors__leaf--l { animation: doors-swing-l 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.35s 1.45s ease-in forwards; pointer-events: none; }
-.doors--open .doors__leaf--r { animation: doors-swing-r 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.35s 1.45s ease-in forwards; pointer-events: none; }
+/* 推开：快速转门 1.05s，门扇到位后快速隐藏（opacity/visibility），不再遮挡街景 */
+.doors--open .doors__leaf--l { animation: doors-swing-l 1.05s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.3s 1s ease-in forwards; pointer-events: none; }
+.doors--open .doors__leaf--r { animation: doors-swing-r 1.05s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.3s 1s ease-in forwards; pointer-events: none; }
 @keyframes doors-swing-l { to { transform: rotateY(-102deg); } }
 @keyframes doors-swing-r { to { transform: rotateY(102deg); } }
 @keyframes door-vanish { to { opacity: 0; visibility: hidden; } }
@@ -251,8 +251,8 @@
 }
 .doors--open .doors__light {
   animation:
-    light-spill 1.5s 0.05s cubic-bezier(0.33, 0, 0.3, 1) forwards,
-    light-merge 0.35s 1.15s ease-out forwards;
+    light-spill 1.05s 0.05s cubic-bezier(0.33, 0, 0.3, 1) forwards,
+    light-merge 0.3s 0.8s ease-out forwards;
 }
 @keyframes light-spill {
   0% { opacity: 0; width: 4px; }
@@ -321,13 +321,14 @@
   opacity: 0;
 }
 .doors--open .street {
-  animation: street-resolve 0.6s 1.15s ease-out forwards;
+  animation: street-resolve 2.6s 0.8s ease-out forwards;
 }
-/* 显影：过曝+重模糊 → 快速变清，收在带一点薄雾柔光的街景（像清晨透亮的感觉），伴随轻微推进 */
+/* 显影：过曝+重模糊 → 快速变清 → 之后持续停留约 2.4s 并缓慢推进（留足时间看街景），收在薄雾柔光状态 */
 @keyframes street-resolve {
   from { opacity: 0; filter: brightness(2.2) saturate(1.3) blur(12px); transform: scale(1.06); }
-  35% { opacity: 1; filter: brightness(1.55) saturate(1.15) blur(5px); }
-  to { opacity: 1; filter: brightness(1.1) saturate(1.1) blur(2px); transform: scale(1.14); }
+  20% { opacity: 1; filter: brightness(1.55) saturate(1.15) blur(5px); }
+  45% { opacity: 1; filter: brightness(1.1) saturate(1.1) blur(2px); transform: scale(1.14); }
+  to { opacity: 1; filter: brightness(1.1) saturate(1.1) blur(2px); transform: scale(1.3); }
 }
 /* 街景大图（皮克斯风第六大道，AI 生成）：铺满门后，随开门动画向纵深推进 */
 .street__img {
@@ -350,7 +351,7 @@
   pointer-events: none;
 }
 .doors--open .doors__veil {
-  animation: veil-in 0.55s 1.85s ease-in forwards;
+  animation: veil-in 0.6s 3.4s ease-in forwards;
 }
 @keyframes veil-in {
   to { opacity: 1; }

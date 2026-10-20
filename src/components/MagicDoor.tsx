@@ -15,8 +15,8 @@ export default function MagicDoor({ onOpen }: { onOpen: () => void }) {
     if (open) return
     setOpen(true)
     track('door_open', {})
-    // 门开 1.5s → 街道亮起并推进 2s → 暖光收束，2.7s 时切进故事屏
-    setTimeout(onOpen, 2700)
+    // 快转门 1.05s → 光团 1.1s 前散尽 → 街景 0.8s 起显影并停留约 2.4s（缓慢推进）→ 3.4s 暖光收束，4s 时切进故事屏
+    setTimeout(onOpen, 4000)
   }
 
   return (
