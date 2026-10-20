@@ -78,7 +78,7 @@
 }
 .btn[disabled] { opacity: 0.4; pointer-events: none; }
 
-/* ========== 稀有度徽章 ========== */
+/* ========== 稀有度徽章（每款独立配色 + 镜面玻璃底） ========== */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -89,12 +89,44 @@
   font-weight: 800;
   letter-spacing: 0.18em;
   border: 1px solid currentColor;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
-.badge--guide { color: var(--c-guide); }
-.badge--street { color: var(--c-street); }
-.badge--limited { color: var(--c-limited); }
-.badge--heat { color: var(--c-heat); }
-.badge--ghost { color: var(--c-ghost); }
+/* 引导款 · 金 */
+.badge--guide {
+  color: #ffd76a;
+  border-color: rgba(255, 215, 106, 0.55);
+  background: linear-gradient(180deg, rgba(255, 215, 106, 0.28), rgba(255, 215, 106, 0.07));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 14px rgba(255, 215, 106, 0.25);
+}
+/* 路面款 · 银蓝（提亮，避免灰暗） */
+.badge--street {
+  color: #d3dae4;
+  border-color: rgba(211, 218, 228, 0.5);
+  background: linear-gradient(180deg, rgba(211, 218, 228, 0.26), rgba(154, 163, 178, 0.07));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 0 14px rgba(211, 218, 228, 0.16);
+}
+/* 限定 · 玉青 */
+.badge--limited {
+  color: #5fe8d4;
+  border-color: rgba(95, 232, 212, 0.5);
+  background: linear-gradient(180deg, rgba(69, 224, 200, 0.28), rgba(69, 224, 200, 0.07));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 14px rgba(69, 224, 200, 0.25);
+}
+/* 狠货 · 炽橙 */
+.badge--heat {
+  color: #ff8f5c;
+  border-color: rgba(255, 143, 92, 0.55);
+  background: linear-gradient(180deg, rgba(255, 107, 74, 0.3), rgba(255, 107, 74, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 14px rgba(255, 107, 74, 0.3);
+}
+/* 幽灵款 · 幽紫 */
+.badge--ghost {
+  color: #c49aff;
+  border-color: rgba(196, 154, 255, 0.55);
+  background: linear-gradient(180deg, rgba(176, 124, 255, 0.3), rgba(176, 124, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 14px rgba(176, 124, 255, 0.3);
+}
 .badge__num {
   font-size: 10px;
   opacity: 0.75;
@@ -145,16 +177,23 @@
   background: var(--bg);
   text-align: center;
 }
-/* logo：固定左上角 */
+/* logo：固定左上角（毛玻璃药丸，深/亮背景上都清晰） */
 .brand--corner {
   position: absolute;
   top: max(20px, env(safe-area-inset-top));
   left: 24px;
   z-index: 40;
   pointer-events: none;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: rgba(22, 14, 36, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 18px rgba(20, 10, 30, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
-.brand--corner .brand__zh { font-size: 20px; }
-.brand--corner .brand__en { font-size: 10px; }
+.brand--corner .brand__zh { font-size: 20px; text-shadow: 0 1px 6px rgba(20, 10, 30, 0.5); }
+.brand--corner .brand__en { font-size: 10px; color: rgba(255, 236, 214, 0.85); }
 /* 标题悬浮层：上部居中（left/right 双定位，避免被 rise 动画的 transform 覆盖居中） */
 .landing__head {
   position: absolute;
@@ -164,8 +203,10 @@
   z-index: 40;
   padding: 0 18px;
   pointer-events: none;
-  animation: rise 0.8s ease both;
+  /* 推门后中央文字淡出，把舞台交给街景（ doors--open 是它的前序兄弟节点） */
+  transition: opacity 0.6s 0.35s ease;
 }
+.doors--open ~ .landing__head { opacity: 0; }
 .landing__title {
   font-size: clamp(30px, 7vw, 56px);
   font-weight: 900;
@@ -173,6 +214,7 @@
   line-height: 1.3;
   white-space: pre-line; /* \n 强制两行 */
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+  animation: rise 0.8s ease both;
 }
 .landing__sub {
   margin-top: 12px;
@@ -859,7 +901,19 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-.reveal__row .btn { flex: 1 1 120px; padding: 13px 10px; font-size: 15px; }
+/* 揭晓屏底部次级按钮：暖色玻璃实底（ghost 的细边框+灰字在黄昏背景上不清晰） */
+.reveal__row .btn {
+  flex: 1 1 120px;
+  padding: 13px 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff6e8;
+  background: linear-gradient(180deg, rgba(50, 30, 64, 0.58), rgba(38, 22, 52, 0.46));
+  border: 1px solid rgba(255, 232, 200, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+/* 主按钮文字加重，保证金底上清晰 */
+.reveal__actions .btn--gold { color: #2e1c02; font-weight: 900; }
 
 /* ========== Wall 图鉴墙 ========== */
 .wall {
