@@ -2,14 +2,13 @@
 """生成「山海经手札·听故事」朗读音频（edge-tts 微软神经语音，免费无 key）。
 
 用法（在 blindgap-web/ 下）：
-    python3 tools/gen_audio.py            # 生成全部声线（低沉解说 + 青年男声）
+    python3 tools/gen_audio.py            # 生成默认声线
     python3 tools/gen_audio.py yunjian    # 只生成低沉解说
 
-声线：
-    yunjian  zh-CN-YunjianNeural  浑厚男声·体育解说风（默认主声线，纪录片感）
-    yunxi    zh-CN-YunxiNeural    青年男声·明亮干净（备选声线）
+声线（唯一、默认）：
+    yunjian  zh-CN-YunjianNeural  浑厚男声·体育解说风（纪录片感，缓慢从容）
 
-产出：public/audio/{编号}-{声线}.mp3，并自动给 src/data/lore.ts 补 audio/audioAlt 字段。
+产出：public/audio/{编号}-yunjian.mp3，并自动给 src/data/lore.ts 补 audio 字段。
 依赖：pip install edge-tts（已装在隔离 venv）
 """
 import asyncio
@@ -26,9 +25,11 @@ NARRATION_JSON = os.path.join(ROOT, ".tmp-narration.json")
 
 VOICE_ALIAS = {
     "yunjian": "zh-CN-YunjianNeural",
-    "yunxi": "zh-CN-YunxiNeural",
 }
-RATE = "-10%"  # 比默认慢一成，更接近纪录片解说的从容感
+# 唯一声线语速：比默认慢两成，更接近纪录片解说的从容感
+VOICE_RATE = {
+    "zh-CN-YunjianNeural": "-20%",
+}
 
 
 def voice_slug(voice_id: str) -> str:
@@ -39,28 +40,25 @@ async def gen_voice(voice_id: str, items: dict) -> None:
     import edge_tts
 
     slug = voice_slug(voice_id)
+    rate = VOICE_RATE.get(voice_id, "-10%")
     for ip_id, item in items.items():
         out = os.path.join(PUB_AUDIO, f"{ip_id}-{slug}.mp3")
-        communicate = edge_tts.Communicate(item["text"], voice_id, rate=RATE)
+        communicate = edge_tts.Communicate(item["text"], voice_id, rate=rate)
         await communicate.save(out)
         size = os.path.getsize(out) // 1024
         print(f"  ok {ip_id} {item['name']} -> {os.path.basename(out)} ({size} KB)")
 
 
 def patch_lore(slugs: list) -> None:
-    """给 lore.ts 每个条目补 audio（主声线）/ audioAlt（备选声线）字段。幂等。"""
+    """给 lore.ts 每个条目补 audio（唯一默认声线）字段。幂等。"""
     with open(LORE_TS, encoding="utf-8") as f:
         src = f.read()
 
     main_slug = slugs[0]
-    alt_slug = slugs[1] if len(slugs) > 1 else None
 
     def repl(m: "re.Match") -> str:
         ip_id = m.group(2)
-        lines = [f"    audio: 'audio/{ip_id}-{main_slug}.mp3',"]
-        if alt_slug:
-            lines.append(f"    audioAlt: 'audio/{ip_id}-{alt_slug}.mp3',")
-        return m.group(1) + "\n".join(lines) + "\n"
+        return m.group(1) + f"    audio: 'audio/{ip_id}-{main_slug}.mp3',\n"
 
     pattern = re.compile(r"(\n  '(\d{3})': \{\n)")
     if f"audio: 'audio/" in src:
@@ -69,8 +67,7 @@ def patch_lore(slugs: list) -> None:
     src = pattern.sub(repl, src)
     with open(LORE_TS, "w", encoding="utf-8") as f:
         f.write(src)
-    print(f"  lore.ts 已补 audio/audioAlt 字段（{main_slug}"
-          + (f" / {alt_slug}" if alt_slug else "") + "）")
+    print(f"  lore.ts 已补 audio 字段（{main_slug}）")
 
 
 def main() -> None:

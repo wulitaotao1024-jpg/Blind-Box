@@ -13,7 +13,6 @@ export default function Landing({ onStart }: { onStart: () => void }) {
       <div>
         <h1 className="landing__title">{HOME_TITLE}</h1>
         <p className="landing__sub">第六大道 · IP 收藏宇宙</p>
-        <p className="landing__street">故事先行 ｜ 收集即守护 ｜ 每日补给</p>
       </div>
 
       <div className="landing__box-zone">

@@ -19,5 +19,5 @@ export const SUBTITLES: SubtitleCue[] = [
 ]
 
 export const END_CARD_LINE = '他的故事在你手里，开盒继续。'
-export const HOME_TITLE = '进来，拼我的宇宙'
+export const HOME_TITLE = '推开盒隙，遇见第六大道'
 export const FOOTER_LINE = '这宇宙，第一批只给懂的人。'

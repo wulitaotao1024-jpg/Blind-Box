@@ -56,15 +56,14 @@ describe('F9 山海经手札 lore 数据', () => {
     }
   })
 
-  it('audio / audioAlt 引用的 mp3 必须真实存在于 public/audio', () => {
+  it('audio 引用的 mp3 必须真实存在于 public/audio', () => {
     for (const ip of SHENSHOU) {
-      const l = LORE[ip.id]
-      for (const field of ['audio', 'audioAlt'] as const) {
-        const rel = l[field]
-        if (!rel) continue
-        expect(rel, `${ip.id} ${field} 必须以 audio/ 开头`).toMatch(/^audio\/[\w-]+\.mp3$/)
-        expect(hasAudioFile(rel), `${ip.id} ${field} 指向的文件不存在: public/${rel}`).toBe(true)
+      const rel = LORE[ip.id].audio
+      if (!rel) {
+        throw new Error(`${ip.id} 缺少 audio 配音字段`)
       }
+      expect(rel, `${ip.id} audio 必须以 audio/ 开头`).toMatch(/^audio\/[\w-]+\.mp3$/)
+      expect(hasAudioFile(rel), `${ip.id} audio 指向的文件不存在: public/${rel}`).toBe(true)
     }
   })
 })

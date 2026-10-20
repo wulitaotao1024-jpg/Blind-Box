@@ -20,8 +20,7 @@ export interface Lore {
   sourceNote?: string // 出处说明；非《山海经》名录的异兽必填
   quote: string // 典籍原文摘录（不可篡改）
   story: string // 白话故事（第六大道世界观）
-  audio?: string // 预渲染配音（edge-tts 神经语音·低沉解说声线），public/ 相对路径
-  audioAlt?: string // 备选声线（青年男声），存在时前端提供切换
+  audio?: string // 预渲染配音（edge-tts 神经语音·低沉解说声线，默认且唯一），public/ 相对路径
 }
 
 // 保底/抽盒状态：服务端持久化模型（MVP 用 localStorage 模拟）

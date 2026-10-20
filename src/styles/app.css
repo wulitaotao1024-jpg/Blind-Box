@@ -167,13 +167,6 @@
   letter-spacing: 0.22em;
   animation: rise 0.8s 0.15s ease both;
 }
-.landing__street {
-  margin-top: 8px;
-  color: var(--ink-faint);
-  font-size: 12px;
-  letter-spacing: 0.4em;
-  animation: rise 0.8s 0.25s ease both;
-}
 .landing__box-zone {
   display: flex;
   flex-direction: column;
@@ -187,38 +180,97 @@
   width: 120px;
   height: 96px;
   position: relative;
-  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55));
 }
+/* 盒身：哑光深色 + 内阴影 + 金边 */
+.mystery-box__body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 66%;
+  z-index: 1;
+  border: 1px solid rgba(245, 197, 66, 0.45);
+  border-radius: 4px 4px 12px 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0) 24%),
+    linear-gradient(165deg, #2b2b42, #14141f);
+  box-shadow:
+    inset 0 7px 14px rgba(0, 0, 0, 0.45),
+    inset 0 -12px 18px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+/* 斜向金属高光 */
+.mystery-box__sheen {
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 55%;
+  height: 200%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  transform: rotate(9deg);
+  pointer-events: none;
+}
+/* 竖向封条 */
+.mystery-box__tape {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20%;
+  height: 100%;
+  z-index: 1;
+  background: linear-gradient(180deg, #ffe08a, var(--gold) 45%, #c8901f);
+  box-shadow: 0 0 10px rgba(245, 197, 66, 0.4);
+}
+/* 中央封缄圆印（品牌印记） */
+.mystery-box__seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: 900;
+  color: #3a2a05;
+  background: radial-gradient(circle at 34% 30%, #fff6d6, #f5c542 56%, #c8901f);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.25);
+}
+/* 盒盖：带高光的金属盖 */
 .mystery-box__lid {
   position: absolute;
   top: 0;
   left: -6%;
   width: 112%;
-  height: 34%;
-  background: linear-gradient(160deg, #2c2c40, #191926);
-  border: 1px solid rgba(245, 197, 66, 0.5);
-  border-radius: 8px 8px 3px 3px;
+  height: 40%;
+  z-index: 3;
+  border: 1px solid rgba(245, 197, 66, 0.6);
+  border-radius: 10px 10px 5px 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(160deg, #36364f, #1c1c2b);
+  box-shadow: inset 0 3px 7px rgba(255, 255, 255, 0.08), 0 5px 12px rgba(0, 0, 0, 0.45);
 }
-.mystery-box__body {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 68%;
-  background: linear-gradient(165deg, #232336, #13131f);
-  border: 1px solid rgba(245, 197, 66, 0.35);
-  border-radius: 3px 3px 10px 10px;
-}
+/* 盒底暖光，呼吸 */
 .mystery-box__glow {
   position: absolute;
   left: 50%;
   bottom: -8px;
   transform: translateX(-50%);
-  width: 70%;
-  height: 10px;
+  width: 72%;
+  height: 12px;
   border-radius: 50%;
   background: var(--gold);
   filter: blur(14px);
   opacity: 0.8;
+  z-index: 0;
 }
 .mystery-box__hint {
   position: absolute;
@@ -230,6 +282,7 @@
   letter-spacing: 0.32em;
   color: var(--gold);
   opacity: 0.9;
+  z-index: 4;
 }
 /* 首页盒子：呼吸浮动 */
 .landing__box {
@@ -521,29 +574,6 @@
 }
 .lore__btn { padding: 8px 16px; font-size: 13px; letter-spacing: 0.12em; }
 .lore__audio-hint { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.06em; }
-/* 声线切换（低沉解说 / 青年男声） */
-.lore__voices {
-  display: inline-flex;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.lore__voice {
-  padding: 6px 12px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  background: transparent;
-  border: 0;
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-.lore__voice + .lore__voice { border-left: 1px solid var(--line); }
-.lore__voice.is-on {
-  background: rgba(69, 224, 200, 0.12);
-  color: var(--c-limited);
-  font-weight: 700;
-}
 /* 播放进度条（2px 细条，占满一行） */
 .lore__progress {
   flex-basis: 100%;

@@ -5,11 +5,11 @@ import { useStoryPlayer } from '../hooks/useStoryPlayer'
 import type { IpDef } from '../logic/types'
 
 // F9 山海经手札：出处 + 原文 + 白话故事 + 听故事
-// 音频优先播放预渲染配音（edge-tts 神经语音·低沉解说/青年男声双声线），
+// 音频优先播放预渲染配音（edge-tts 神经语音·低沉解说，默认且唯一声线），
 // 无预渲染文件时回退浏览器 speechSynthesis（useNarrator）
 export default function LorePanel({ ip }: { ip: IpDef }) {
   const lore = ip.lore ?? LORE[ip.id]
-  const player = useStoryPlayer({ deep: lore?.audio, bright: lore?.audioAlt })
+  const player = useStoryPlayer({ deep: lore?.audio })
   const narrator = useNarrator()
 
   if (!lore) return null
@@ -47,24 +47,6 @@ export default function LorePanel({ ip }: { ip: IpDef }) {
             <button className="btn btn--ghost lore__btn" onClick={player.stop}>
               停止
             </button>
-          )}
-          {player.switchable && (
-            <div className="lore__voices" role="group" aria-label="切换声线">
-              <button
-                className={`lore__voice${player.voice === 'deep' ? ' is-on' : ''}`}
-                onClick={() => player.chooseVoice('deep')}
-                aria-pressed={player.voice === 'deep'}
-              >
-                低沉解说
-              </button>
-              <button
-                className={`lore__voice${player.voice === 'bright' ? ' is-on' : ''}`}
-                onClick={() => player.chooseVoice('bright')}
-                aria-pressed={player.voice === 'bright'}
-              >
-                青年男声
-              </button>
-            </div>
           )}
           <span className="lore__audio-hint">
             {player.playing ? player.timeLabel || '播放中…' : '点击听这段山海经故事'}
