@@ -602,7 +602,7 @@
   font-size: 13px;
   letter-spacing: 0.14em;
 }
-/* 弱网兜底：静态封面直出开盒 */
+/* 弱网兜底：静态封面直出开盒（同样用黄昏渐变保持连贯） */
 .story__fallback {
   position: absolute;
   inset: 0;
@@ -612,8 +612,9 @@
   justify-content: center;
   gap: 26px;
   background:
-    radial-gradient(80% 50% at 50% 20%, rgba(245, 197, 66, 0.12), transparent 65%),
-    linear-gradient(180deg, #101018, #05050a);
+    radial-gradient(58% 40% at 50% 66%, rgba(255, 220, 160, 0.28), transparent 70%),
+    radial-gradient(90% 60% at 50% 112%, rgba(255, 150, 100, 0.22), transparent 66%),
+    linear-gradient(180deg, #241a3e 0%, #3a2557 32%, #6b3a63 60%, #a05a68 82%, #d97a56 100%);
 }
 .story__fallback-title {
   font-size: clamp(22px, 6vw, 34px);
