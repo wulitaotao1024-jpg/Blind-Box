@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import EndCard from './screens/EndCard'
 import Landing from './screens/Landing'
+import Opening from './screens/Opening'
 import Reveal from './screens/Reveal'
 import Story from './screens/Story'
 import Wall from './screens/Wall'
@@ -12,8 +13,8 @@ import type { Persisted } from './logic/storage'
 import { track } from './logic/track'
 import type { DrawResult } from './logic/types'
 
-// 首页动线状态机（PRD 6.3）：landing → story → endcard → reveal → wall
-type Screen = 'landing' | 'story' | 'endcard' | 'reveal' | 'wall'
+// 首页动线状态机（PRD 6.3）：landing → story → endcard → (opening →) reveal → wall
+type Screen = 'landing' | 'story' | 'endcard' | 'opening' | 'reveal' | 'wall'
 
 interface LastResult extends DrawResult {
   isNew: boolean
@@ -43,25 +44,35 @@ export default function App() {
 
   const drawsLeft = (persisted.dailyDrawUsed ? 0 : 1) + (persisted.shareDrawUsed ? 0 : 1)
 
-  // F1 开盒：MVP 本地抽盒（概率/保底与服务端同语义，见 logic/boxReducer.ts）
-  const openBox = useCallback(() => {
-    if (drawsLeft <= 0) {
-      setScreen('wall')
-      return
-    }
+  // F1 抽盒（纯逻辑，不含补给校验）：概率/保底与服务端同语义（见 logic/boxReducer.ts）。
+  // 由 EndCard（自带开盒演出）或 Opening（再抽一次/图鉴墙开盒演出）在动画放完后调用。
+  const performDraw = useCallback(() => {
     const { result, next } = draw(persisted.box, Math.random, IPS)
     const { set, isNew } = collect(new Set(persisted.collected), result.ipId)
+    // 补给消耗：优先扣登录补给，登录已用则扣分享补给（每日共 2 发，必须能扣到 0，
+    // 否则 drawsLeft 卡在 1 无限抽，或因历史脏数据永远进不了揭晓屏）
+    const consumedShare = persisted.dailyDrawUsed
     update({
       ...persisted,
       box: next,
       collected: [...set],
-      dailyDrawUsed: true, // 优先消耗登录补给
+      dailyDrawUsed: true,
+      shareDrawUsed: consumedShare ? true : persisted.shareDrawUsed,
     })
-    track('open_box', { source: persisted.shareDrawUsed ? 'share' : 'login' })
+    track('open_box', { source: consumedShare ? 'share' : 'login' })
     track('box_result', { ip: result.ipId, rarity: result.rarity, duplicate: !isNew })
     setLast({ ...result, isNew })
     setScreen('reveal')
-  }, [drawsLeft, persisted, update])
+  }, [persisted, update])
+
+  // 进入开盒演出：补给耗尽直接进图鉴墙，否则先播盒子抖动/弹盖/礼花/闪光，放完再 performDraw
+  const startOpening = useCallback(() => {
+    if (drawsLeft <= 0) {
+      setScreen('wall')
+      return
+    }
+    setScreen('opening')
+  }, [drawsLeft])
 
   // F4 分享：复制链接（MVP 通用分享），每日首享 +1 发
   const share = useCallback(() => {
@@ -92,10 +103,14 @@ export default function App() {
       {screen === 'endcard' && (
         <EndCard
           drawsLeft={drawsLeft}
-          onOpen={openBox}
+          onOpen={performDraw}
+          onWall={() => setScreen('wall')}
           onReplay={() => setScreen('landing')}
         />
       )}
+
+      {/* 再抽一次 / 图鉴墙开盒：先播开盒演出，放完再抽 */}
+      {screen === 'opening' && <Opening onDone={performDraw} />}
 
       {screen === 'reveal' && last && lastIp && (
         <Reveal
@@ -103,7 +118,7 @@ export default function App() {
           isNew={last.isNew}
           drawsLeft={drawsLeft}
           onContinue={() => setScreen('wall')}
-          onDrawAgain={openBox}
+          onDrawAgain={startOpening}
         />
       )}
 
@@ -112,7 +127,7 @@ export default function App() {
           collected={new Set(persisted.collected)}
           drawsLeft={drawsLeft}
           shareCopied={shareCopied}
-          onDraw={openBox}
+          onDraw={startOpening}
           onShare={share}
           onReplay={() => setScreen('landing')}
         />

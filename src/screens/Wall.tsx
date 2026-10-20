@@ -60,72 +60,83 @@ export default function Wall({
 
   return (
     <div className="wall">
-      <header className="wall__head">
-        <span className="brand brand--pill">
-          <span className="brand__zh">盒隙</span>
-          <span className="brand__en">BLINDGAP</span>
-        </span>
-        <h1 className="wall__title">我的盒隙墙</h1>
-      </header>
-      <p className="wall__street">第六大道 · 花名册</p>
-
-      <div className="wall__progress">
-        <p className="wall__progress-text">
-          已点亮 <b>{p.collected}</b> / {p.total}
-          {complete ? ' —— 街区全员归来！' : left > 0 ? `，还差 ${left} 个兄弟就能端盒。` : ''}
-        </p>
-        {complete && <span className="wall__complete">端盒达成 · 彩蛋入口</span>}
-      </div>
-
-      <div className="wall__grid">
-        {IPS.map((ip) => {
-          const owned = collected.has(ip.id)
-          return owned ? (
-            <button key={ip.id} className="cell cell--lit" onClick={() => setDetail(ip)}>
-              <IpPortrait ip={ip} />
-              <span className="cell__meta">
-                <span className="cell__name">{ip.name}</span>
-                <span className="cell__num">№{ip.id}</span>
-              </span>
-            </button>
-          ) : (
-            <div key={ip.id} className="cell cell--dark" aria-label="未收录">
-              <span className="cell__q">？？？</span>
-              <span className="cell__hint">{ip.status === 'pending' ? '入住筹备中' : '——据说很狠'}</span>
+      <div className="wall__inner">
+        {/* 第一行：logo 独占一行、贴最左 */}
+        <header className="wall__head">
+          <span className="brand brand--pill">
+            <span className="brand__zh">盒隙</span>
+            <span className="brand__en">BLINDGAP</span>
+          </span>
+          {/* 第二行：标题在左，册名紧跟其后，进度靠右，同一行 */}
+          <div className="wall__headline">
+            <h1 className="wall__title">我的盒隙墙</h1>
+            <p className="wall__street">第六大道 · 花名册</p>
+            <div className="wall__progress">
+              <p className="wall__progress-text">
+                已点亮 <b>{p.collected}</b> / {p.total}
+                {complete ? ' —— 街区全员归来！' : left > 0 ? `，还差 ${left} 个兄弟就能端盒。` : ''}
+              </p>
+              {complete && <span className="wall__complete">端盒达成 · 彩蛋入口</span>}
             </div>
-          )
-        })}
+          </div>
+        </header>
+
+        <div className="wall__grid">
+          {IPS.map((ip) => {
+            const owned = collected.has(ip.id)
+            return owned ? (
+              <button key={ip.id} className="cell cell--lit" onClick={() => setDetail(ip)}>
+                <IpPortrait ip={ip} />
+                <span className="cell__meta">
+                  <span className="cell__name">{ip.name}</span>
+                  <span className="cell__num">№{ip.id}</span>
+                </span>
+              </button>
+            ) : (
+              <div key={ip.id} className="cell cell--dark" aria-label="未收录">
+                <span className="cell__q">？？？</span>
+                <span className="cell__hint">{ip.status === 'pending' ? '入住筹备中' : '——据说很狠'}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="wall__next-wave">
+          <span>神兽系列 · №009–020 · 12 位已上线</span>
+          <span>集齐即端盒</span>
+        </div>
+
+        <div className="wall__actions">
+          <button
+            className="btn btn--gold"
+            onClick={onDraw}
+            disabled={drawsLeft <= 0}
+            title={drawsLeft <= 0 ? '今日补给已用完，分享 +1 发或明天再来' : undefined}
+          >
+            {drawsLeft > 0 ? `开 盒（${drawsLeft} 发）` : '今日已用完'}
+          </button>
+          <button className="btn btn--ghost" onClick={onShare}>
+            {shareCopied ? '链接已复制 ✓' : '分享 +1发'}
+          </button>
+          <button className="btn btn--ghost" onClick={onReplay}>重看故事</button>
+          <button className="btn btn--ghost" onClick={syncToPet} title="把已抽到角色推送到桌面宠">
+            同步到桌宠
+          </button>
+        </div>
+
+        {syncMsg && <p className="wall__sync-msg">{syncMsg}</p>}
+
+        <p className="wall__odds">
+          概率公示：路面款 55% ｜ 限定 33% ｜ 狠货 10% ｜ 幽灵款 2%<br />
+          保底：小保底 10 抽必出限定+ ｜ 大保底 40 抽必出狠货+ ｜ 幽灵硬保底 90 抽<br />
+          {FOOTER_LINE}
+        </p>
       </div>
-
-      <div className="wall__next-wave">
-        <span>神兽系列 · №009–020 · 12 位已上线</span>
-        <span>集齐即端盒</span>
-      </div>
-
-      <div className="wall__actions">
-        <button className="btn btn--gold" onClick={onDraw}>
-          {drawsLeft > 0 ? `开 盒（${drawsLeft} 发）` : '今日已用完'}
-        </button>
-        <button className="btn btn--ghost" onClick={onShare}>
-          {shareCopied ? '链接已复制 ✓' : '分享 +1发'}
-        </button>
-        <button className="btn btn--ghost" onClick={onReplay}>重看故事</button>
-        <button className="btn btn--ghost" onClick={syncToPet} title="把已抽到角色推送到桌面宠">
-          同步到桌宠
-        </button>
-      </div>
-
-      {syncMsg && <p className="wall__sync-msg">{syncMsg}</p>}
-
-      <p className="wall__odds">
-        概率公示：路面款 55% ｜ 限定 33% ｜ 狠货 10% ｜ 幽灵款 2%<br />
-        保底：小保底 10 抽必出限定+ ｜ 大保底 40 抽必出狠货+ ｜ 幽灵硬保底 90 抽<br />
-        {FOOTER_LINE}
-      </p>
 
       {detail && (
         <div className="detail" role="dialog" onClick={(e) => e.target === e.currentTarget && setDetail(null)}>
-          <div className="detail__card">
+          {/* 复用揭晓屏的 reveal__card，保证与开盒揭晓卡完全同一张卡 */}
+          <article className="reveal__card detail__card">
             <div className="reveal__top">
               <span className="reveal__num">№ {detail.id}</span>
               <RarityBadge rarity={detail.rarity} />
@@ -143,10 +154,10 @@ export default function Wall({
               <p className="reveal__note-label">主理人手记</p>
               {detail.note}
             </div>
-            <div className="reveal__row" style={{ marginTop: 16 }}>
-              <button className="btn btn--ghost" onClick={() => setViewing3d(detail)}>3D 鉴赏</button>
-              <button className="btn btn--gold" onClick={() => setDetail(null)}>关闭</button>
-            </div>
+          </article>
+          <div className="reveal__row detail__actions">
+            <button className="btn btn--ghost" onClick={() => setViewing3d(detail)}>3D 鉴赏</button>
+            <button className="btn btn--gold" onClick={() => setDetail(null)}>关闭</button>
           </div>
         </div>
       )}

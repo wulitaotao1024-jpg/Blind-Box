@@ -24,17 +24,21 @@ const CONFETTI = [
 
 // 末帧 EndCard：盒子「咔哒」落下，盒子本身就是开盒按钮（PRD 6.3 原则4）
 // 点击开盒 → 加速抖动 → 盒盖弹飞 + 礼花 + 盒内光束 + 闪光 → 无缝进揭晓屏
+// 次数用完时不再假装开盒（放完动画却被甩进图鉴墙）：金色按钮直接改道图鉴墙
 export default function EndCard({
   drawsLeft,
   onOpen,
+  onWall,
   onReplay,
 }: {
   drawsLeft: number
   onOpen: () => void
+  onWall: () => void
   onReplay: () => void
 }) {
   const [opening, setOpening] = useState(false)
   const [flash, setFlash] = useState(false)
+  const noDraw = drawsLeft <= 0
 
   const open = () => {
     if (opening) return
@@ -43,6 +47,7 @@ export default function EndCard({
     window.setTimeout(() => setFlash(true), 560)
     window.setTimeout(onOpen, 980)
   }
+  const primary = () => (noDraw ? onWall() : open())
 
   return (
     <div className="endcard">
@@ -51,7 +56,11 @@ export default function EndCard({
         <span className="brand__en">BLINDGAP</span>
       </header>
       <div className="endcard__drop">
-        <button onClick={open} aria-label="开盒" disabled={opening}>
+        <button
+          onClick={primary}
+          aria-label={noDraw ? '进入我的图鉴墙' : '开盒'}
+          disabled={opening}
+        >
           <MysteryBox className="endcard__box" opening={opening} />
         </button>
         {opening && (
@@ -73,7 +82,9 @@ export default function EndCard({
       </div>
       <p className="endcard__line">{END_CARD_LINE}</p>
       <div className="endcard__actions">
-        <button className="btn btn--gold" onClick={open} disabled={opening}>开 盒</button>
+        <button className="btn btn--gold" onClick={primary} disabled={opening}>
+          {noDraw ? '进入我的图鉴墙 ›' : '开 盒'}
+        </button>
         <span className="endcard__draws">
           {drawsLeft > 0 ? `今日补给 ${drawsLeft} 发可用` : '今日补给已用完 · 分享或明天再来'}
         </span>
