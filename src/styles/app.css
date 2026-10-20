@@ -271,8 +271,6 @@
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(18deg); }
 }
 .landing__sub {
-  position: relative; /* 视觉右移避开中缝光；用 left 而非 margin——块级元素+居中文字下 margin 会被折半 */
-  left: 48px; /* IP 不再被门缝扫到 */
   margin-top: 12px;
   color: rgba(255, 231, 188, 0.92);
   text-shadow: 0 1px 10px rgba(30, 12, 40, 0.65);
@@ -301,12 +299,13 @@
   border: none;
   padding: 0;
   cursor: pointer;
+  /* 胡桃木配色（v0.2.5 原版，用户要求从深棕黑还原）：暖棕三阶 + 木纹 + 顶部暖光 */
   background:
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 2px, transparent 2px 84px),
-    linear-gradient(180deg, rgba(150, 120, 255, 0.10), rgba(150, 120, 255, 0) 32%),
-    linear-gradient(180deg, #362519, #241811 55%, #180f0a);
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 84px),
+    linear-gradient(180deg, rgba(255, 232, 180, 0.10), rgba(255, 232, 180, 0) 30%),
+    linear-gradient(180deg, #6d492e, #4c3320 60%, #3c2818);
   box-shadow:
-    inset 0 0 140px rgba(0, 0, 0, 0.6),
+    inset 0 0 120px rgba(0, 0, 0, 0.35),
     inset 3px 0 0 rgba(255, 209, 128, 0.16),
     0 0 60px rgba(0, 0, 0, 0.6);
   backface-visibility: hidden;
@@ -360,14 +359,14 @@
 }
 @keyframes light-merge { to { opacity: 0; } }
 
-/* 门板凹嵌（上拱下方，深色+金边） */
+/* 门板凹嵌（上拱下方，深色+金边）——胡桃木配色（v0.2.5 原版） */
 .doors__panel {
   position: absolute;
   left: 16%;
   width: 68%;
-  background: linear-gradient(170deg, #221510, #150c07);
+  background: linear-gradient(170deg, #503622, #3a2716);
   border: 1px solid rgba(255, 209, 128, 0.26);
-  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.65), inset 0 -2px 6px rgba(255, 209, 128, 0.07);
+  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 -2px 6px rgba(255, 220, 160, 0.08);
 }
 .doors__panel--t {
   top: 10%;
@@ -402,6 +401,11 @@
   transform: translateX(-50%);
   background: linear-gradient(180deg, rgba(255, 244, 200, 0.15), #ffe9a8 30%, #ffd76a 70%, rgba(255, 244, 200, 0.15));
   box-shadow: 0 0 16px rgba(255, 215, 106, 0.85), 0 0 40px rgba(255, 200, 90, 0.4);
+  /* 上半段遮罩：缝光从门中下部（约把手高度）起才亮起，标题/副标题居中区不被扫字。
+     副标题底部最坏占缝高约 42.5%（1440×500 矮窗），故 44% 以下全透明；
+     mask 会连同 box-shadow 光晕一起裁剪，文字区干净。 */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 44%, #000 54%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 44%, #000 54%, #000 100%);
   animation: seam-breathe 2.6s ease-in-out infinite;
   pointer-events: none;
 }
