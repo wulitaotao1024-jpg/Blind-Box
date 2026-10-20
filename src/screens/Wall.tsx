@@ -61,8 +61,11 @@ export default function Wall({
   return (
     <div className="wall">
       <header className="wall__head">
+        <span className="brand brand--pill">
+          <span className="brand__zh">盒隙</span>
+          <span className="brand__en">BLINDGAP</span>
+        </span>
         <h1 className="wall__title">我的盒隙墙</h1>
-        <span className="brand__en">BLINDGAP</span>
       </header>
       <p className="wall__street">第六大道 · 花名册</p>
 

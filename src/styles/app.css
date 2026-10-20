@@ -194,6 +194,19 @@
 }
 .brand--corner .brand__zh { font-size: 20px; text-shadow: 0 1px 6px rgba(20, 10, 30, 0.5); }
 .brand--corner .brand__en { font-size: 10px; color: rgba(255, 236, 214, 0.85); }
+/* 静态药丸版（图鉴墙等流式布局用） */
+.brand--pill {
+  flex: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(22, 14, 36, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.brand--pill .brand__zh { font-size: 18px; text-shadow: 0 1px 6px rgba(20, 10, 30, 0.5); }
+.brand--pill .brand__en { font-size: 9px; color: rgba(255, 236, 214, 0.85); }
 /* 标题悬浮层：上部居中（left/right 双定位，避免被 rise 动画的 transform 覆盖居中） */
 .landing__head {
   position: absolute;
@@ -581,6 +594,104 @@
   z-index: 7;
 }
 
+/* ---------- 开盒演出（EndCard 点击后：抖 → 弹盖 → 礼花 → 闪光 → 进揭晓） ---------- */
+.endcard__drop { position: relative; }
+/* 加速抖动：幅度逐级放大（ease-in），0.55s 达到最高潮 */
+.endcard__box.mystery-box--opening {
+  animation: box-shake-accel 0.55s ease-in both;
+}
+@keyframes box-shake-accel {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-3px, 1px) rotate(-1.5deg); }
+  20% { transform: translate(4px, -2px) rotate(2deg); }
+  30% { transform: translate(-6px, 2px) rotate(-2.5deg); }
+  40% { transform: translate(7px, -2px) rotate(3deg); }
+  50% { transform: translate(-9px, 3px) rotate(-4deg); }
+  60% { transform: translate(10px, -3px) rotate(4.5deg); }
+  70% { transform: translate(-12px, 3px) rotate(-5deg); }
+  80% { transform: translate(13px, -4px) rotate(5.5deg); }
+  90% { transform: translate(-15px, 4px) rotate(-6deg); }
+}
+/* 盒盖 + 蝴蝶结在抖动最高潮（0.5s）弹飞 */
+.mystery-box--opening .mystery-box__lid {
+  animation: lid-pop 0.48s 0.5s cubic-bezier(0.25, 0.6, 0.3, 1) forwards;
+}
+@keyframes lid-pop {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  25% { transform: translateY(-16px) rotate(-10deg); opacity: 1; }
+  100% { transform: translateY(-130px) rotate(40deg); opacity: 0; }
+}
+.mystery-box--opening .mystery-box__bow {
+  animation: bow-fly 0.52s 0.5s cubic-bezier(0.25, 0.6, 0.3, 1) forwards;
+}
+@keyframes bow-fly {
+  0% { transform: translateX(-50%) translateY(0) rotate(0deg); opacity: 1; }
+  25% { transform: translateX(-50%) translateY(-22px) rotate(-8deg); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-150px) rotate(45deg); opacity: 0; }
+}
+/* 盒内光束：盒盖弹开瞬间从盒里涌出 */
+.mystery-box__beam {
+  position: absolute;
+  left: 50%;
+  bottom: 44%;
+  transform: translateX(-50%);
+  width: 55%;
+  height: 0;
+  background: linear-gradient(180deg, rgba(255, 244, 214, 0.85), rgba(255, 214, 140, 0));
+  filter: blur(6px);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.mystery-box--opening .mystery-box__beam {
+  animation: beam-shoot 0.7s 0.5s ease-out forwards;
+}
+@keyframes beam-shoot {
+  0% { height: 0; opacity: 0; }
+  30% { height: 130px; opacity: 1; }
+  100% { height: 175px; opacity: 0.85; }
+}
+/* 礼花：以盒心为原点向外迸射 → 滞空 → 旋转飘落 */
+.endcard__confetti {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 0;
+  height: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+.endcard__confetti i {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-burst 0.95s cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+}
+@keyframes confetti-burst {
+  0% { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg); opacity: 1; }
+  35% { transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 1; }
+  100% {
+    transform: translate(-50%, -50%) translate(calc(var(--dx) * 1.35), calc(var(--dy) + 240px)) rotate(calc(var(--rot) + 260deg));
+    opacity: 0;
+  }
+}
+/* 弹盖瞬间的全屏暖金闪光 */
+.endcard__pop-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 248, 228, 0.95) 0%, rgba(255, 216, 140, 0.55) 45%, transparent 72%);
+  animation: pop-flash 0.55s ease-out forwards;
+}
+@keyframes pop-flash {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* 首页魔法之门：交互与动画见 .doors 区块 */
 
 /* ========== Story（无缝视频） ========== */
@@ -919,23 +1030,29 @@
 .wall {
   min-height: 100dvh;
   padding: max(24px, env(safe-area-inset-top)) 20px calc(36px + var(--safe-b));
-  background: var(--bg);
+  /* 与首页街景 / 开盒屏同源的第六大道黄昏渐变 */
+  background:
+    radial-gradient(58% 40% at 50% 82%, rgba(255, 220, 160, 0.16), transparent 70%),
+    radial-gradient(90% 60% at 50% 114%, rgba(255, 150, 100, 0.18), transparent 66%),
+    linear-gradient(180deg, #241a3e 0%, #2e2050 24%, #4a2e5c 50%, #7a4560 76%, #a8645a 100%);
   max-width: 860px;
   margin: 0 auto;
 }
 .wall__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 14px;
   margin-bottom: 6px;
 }
 .wall__title {
   font-size: clamp(22px, 6vw, 30px);
   font-weight: 900;
   letter-spacing: 0.1em;
+  color: #fff6e8;
+  text-shadow: 0 2px 12px rgba(30, 14, 40, 0.4);
 }
 .wall__street {
-  color: var(--ink-faint);
+  color: rgba(255, 232, 206, 0.78);
   font-size: 12px;
   letter-spacing: 0.32em;
   margin-bottom: 16px;
@@ -948,7 +1065,7 @@
   margin-bottom: 18px;
 }
 .wall__progress-text {
-  color: var(--ink-dim);
+  color: rgba(255, 240, 224, 0.9);
   font-size: 14px;
   letter-spacing: 0.08em;
 }
@@ -957,11 +1074,11 @@
   font-size: 18px;
 }
 .wall__complete {
-  color: var(--c-limited);
+  color: #5fe8d4;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.16em;
-  border: 1px solid var(--c-limited);
+  border: 1px solid rgba(95, 232, 212, 0.55);
   padding: 4px 12px;
   border-radius: 999px;
 }
@@ -980,21 +1097,22 @@
 }
 .cell:active { transform: scale(0.97); }
 .cell--lit {
-  border: 1px solid var(--line);
-  background: var(--bg-2);
+  border: 1px solid rgba(255, 232, 200, 0.2);
+  background: linear-gradient(180deg, rgba(34, 22, 52, 0.62), rgba(26, 17, 44, 0.5));
+  box-shadow: 0 10px 24px rgba(30, 14, 40, 0.28);
 }
 .cell--lit .portrait__img { filter: none; }
 .cell--dark {
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed rgba(255, 232, 200, 0.22);
   background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 8px, transparent 8px 16px),
-    var(--bg-2);
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, rgba(34, 22, 52, 0.5), rgba(26, 17, 44, 0.42));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: var(--ink-faint);
+  color: rgba(255, 232, 206, 0.6);
 }
 .cell__q {
   font-size: 30px;
@@ -1023,15 +1141,15 @@
 }
 .cell__num {
   font-size: 10px;
-  color: var(--ink-dim);
+  color: rgba(255, 240, 224, 0.8);
   letter-spacing: 0.14em;
 }
 .wall__next-wave {
   margin-top: 22px;
   padding: 14px 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed rgba(255, 232, 200, 0.26);
   border-radius: var(--radius);
-  color: var(--ink-faint);
+  color: rgba(255, 232, 206, 0.75);
   font-size: 12.5px;
   letter-spacing: 0.12em;
   display: flex;
@@ -1040,7 +1158,7 @@
 }
 .wall__odds {
   margin-top: 20px;
-  color: var(--ink-faint);
+  color: rgba(255, 232, 206, 0.68);
   font-size: 11px;
   letter-spacing: 0.08em;
   line-height: 1.9;
@@ -1053,6 +1171,12 @@
   gap: 12px;
 }
 .wall__actions .btn { flex: 1 1 120px; }
+.wall__actions .btn--ghost {
+  color: #fff6e8;
+  background: linear-gradient(180deg, rgba(50, 30, 64, 0.55), rgba(38, 22, 52, 0.45));
+  border: 1px solid rgba(255, 232, 200, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
 .wall__sync-msg {
   margin-top: 10px;
   text-align: center;
