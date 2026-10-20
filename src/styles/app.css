@@ -229,9 +229,9 @@
 /* 悬停微开，暗示可推 */
 .doors:not(.doors--open) .doors__leaf--l:hover { transform: rotateY(-4deg); }
 .doors:not(.doors--open) .doors__leaf--r:hover { transform: rotateY(4deg); }
-/* 推开：先转门 1.5s，门扇完全打开后隐藏（opacity/visibility），不再遮挡街景 */
-.doors--open .doors__leaf--l { animation: doors-swing-l 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.45s 1.5s ease-in forwards; pointer-events: none; }
-.doors--open .doors__leaf--r { animation: doors-swing-r 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.45s 1.5s ease-in forwards; pointer-events: none; }
+/* 推开：先转门 1.5s，门扇完全打开后快速隐藏（opacity/visibility），不再遮挡街景 */
+.doors--open .doors__leaf--l { animation: doors-swing-l 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.35s 1.45s ease-in forwards; pointer-events: none; }
+.doors--open .doors__leaf--r { animation: doors-swing-r 1.5s 0.05s cubic-bezier(0.65, 0, 0.3, 1) forwards, door-vanish 0.35s 1.45s ease-in forwards; pointer-events: none; }
 @keyframes doors-swing-l { to { transform: rotateY(-102deg); } }
 @keyframes doors-swing-r { to { transform: rotateY(102deg); } }
 @keyframes door-vanish { to { opacity: 0; visibility: hidden; } }
@@ -252,7 +252,7 @@
 .doors--open .doors__light {
   animation:
     light-spill 1.5s 0.05s cubic-bezier(0.33, 0, 0.3, 1) forwards,
-    light-merge 0.5s 1.3s ease-out forwards;
+    light-merge 0.35s 1.15s ease-out forwards;
 }
 @keyframes light-spill {
   0% { opacity: 0; width: 4px; }
@@ -321,7 +321,7 @@
   opacity: 0;
 }
 .doors--open .street {
-  animation: street-resolve 0.85s 1.3s ease-out forwards;
+  animation: street-resolve 0.6s 1.15s ease-out forwards;
 }
 /* 显影：过曝+重模糊 → 快速变清，收在带一点薄雾柔光的街景（像清晨透亮的感觉），伴随轻微推进 */
 @keyframes street-resolve {
@@ -350,7 +350,7 @@
   pointer-events: none;
 }
 .doors--open .doors__veil {
-  animation: veil-in 0.65s 2.05s ease-in forwards;
+  animation: veil-in 0.55s 1.85s ease-in forwards;
 }
 @keyframes veil-in {
   to { opacity: 1; }
