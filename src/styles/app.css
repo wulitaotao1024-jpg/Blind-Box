@@ -175,14 +175,14 @@
   margin-bottom: 6vh;
 }
 
-/* CSS 画的盒子（会呼吸的开启按钮）。动画由外层 .landing__box / .endcard__box / .endcard__drop 驱动 */
+/* CSS 画的盒子（五彩多巴胺礼物盒，会呼吸的开启按钮）。动画由外层 .landing__box / .endcard__box / .endcard__drop 驱动 */
 .mystery-box {
   width: 120px;
   height: 96px;
   position: relative;
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.5));
 }
-/* 盒身：哑光深色 + 内阴影 + 金边 */
+/* 盒身：五彩渐变 + 内高光 */
 .mystery-box__body {
   position: absolute;
   bottom: 0;
@@ -190,60 +190,48 @@
   width: 100%;
   height: 66%;
   z-index: 1;
-  border: 1px solid rgba(245, 197, 66, 0.45);
-  border-radius: 4px 4px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px 6px 14px 14px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0) 24%),
-    linear-gradient(165deg, #2b2b42, #14141f);
+    linear-gradient(135deg, #ff6fae 0%, #b388ff 34%, #5ad1ff 67%, #7be495 100%);
   box-shadow:
-    inset 0 7px 14px rgba(0, 0, 0, 0.45),
-    inset 0 -12px 18px rgba(0, 0, 0, 0.55);
+    inset 0 8px 14px rgba(255, 255, 255, 0.35),
+    inset 0 -14px 20px rgba(80, 20, 90, 0.35);
   overflow: hidden;
 }
-/* 斜向金属高光 */
-.mystery-box__sheen {
+/* 盒身顶部高光 */
+.mystery-box__shine {
   position: absolute;
-  top: -50%;
-  left: -20%;
-  width: 55%;
-  height: 200%;
-  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.14), transparent);
-  transform: rotate(9deg);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 44%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 100%);
+  border-radius: 6px 6px 0 0;
   pointer-events: none;
 }
-/* 竖向封条 */
-.mystery-box__tape {
+/* 礼物丝带（竖 + 横，奶白光泽） */
+.mystery-box__ribbon {
   position: absolute;
+  z-index: 2;
+  background: linear-gradient(180deg, #ffffff, #ffe6f6);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+.mystery-box__ribbon--v {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 20%;
+  width: 19%;
   height: 100%;
-  z-index: 1;
-  background: linear-gradient(180deg, #ffe08a, var(--gold) 45%, #c8901f);
-  box-shadow: 0 0 10px rgba(245, 197, 66, 0.4);
 }
-/* 中央封缄圆印（品牌印记） */
-.mystery-box__seal {
-  position: absolute;
+.mystery-box__ribbon--h {
+  left: 0;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 15px;
-  font-weight: 900;
-  color: #3a2a05;
-  background: radial-gradient(circle at 34% 30%, #fff6d6, #f5c542 56%, #c8901f);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 -2px 4px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%);
+  width: 100%;
+  height: 17%;
 }
-/* 盒盖：带高光的金属盖 */
+/* 盒盖：暖色渐变 */
 .mystery-box__lid {
   position: absolute;
   top: 0;
@@ -251,38 +239,89 @@
   width: 112%;
   height: 40%;
   z-index: 3;
-  border: 1px solid rgba(245, 197, 66, 0.6);
-  border-radius: 10px 10px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 11px 11px 5px 5px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0) 42%),
-    linear-gradient(160deg, #36364f, #1c1c2b);
-  box-shadow: inset 0 3px 7px rgba(255, 255, 255, 0.08), 0 5px 12px rgba(0, 0, 0, 0.45);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%),
+    linear-gradient(135deg, #ffe14d 0%, #ff9e6d 100%);
+  box-shadow: inset 0 3px 7px rgba(255, 255, 255, 0.5), 0 5px 12px rgba(0, 0, 0, 0.4);
 }
-/* 盒底暖光，呼吸 */
+/* 蝴蝶结（奶白丝带） */
+.mystery-box__bow {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 32px;
+  z-index: 4;
+}
+.mystery-box__loop {
+  position: absolute;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff, #ffd9ef);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 -3px 5px rgba(0, 0, 0, 0.12);
+}
+.mystery-box__loop--l { left: -3px; transform: rotate(-22deg); }
+.mystery-box__loop--r { right: -3px; transform: rotate(22deg); }
+.mystery-box__knot {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffffff, #ffd9ef);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+/* 多巴胺闪光点 */
+.mystery-box__spark {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  z-index: 6;
+  filter: drop-shadow(0 0 5px currentColor);
+  animation: twinkle 1.8s ease-in-out infinite;
+}
+.mystery-box__spark--1 { top: -8px; right: 4px; color: #ff5fa2; background: #ff5fa2; }
+.mystery-box__spark--2 { bottom: 12px; left: -9px; color: #29e0d6; background: #29e0d6; animation-delay: 0.6s; }
+.mystery-box__spark--3 { bottom: -2px; right: -7px; color: #ffd23f; background: #ffd23f; animation-delay: 1.1s; }
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.5); opacity: 0.35; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+/* 盒底彩色暖光，呼吸 */
 .mystery-box__glow {
   position: absolute;
   left: 50%;
-  bottom: -8px;
+  bottom: -10px;
   transform: translateX(-50%);
-  width: 72%;
-  height: 12px;
+  width: 84%;
+  height: 16px;
   border-radius: 50%;
-  background: var(--gold);
-  filter: blur(14px);
-  opacity: 0.8;
+  background: radial-gradient(closest-side, rgba(255, 95, 162, 0.9), rgba(177, 92, 255, 0.45) 55%, rgba(42, 224, 214, 0) 100%);
+  filter: blur(10px);
+  opacity: 0.9;
   z-index: 0;
 }
 .mystery-box__hint {
   position: absolute;
-  top: -34px;
+  top: -38px;
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
   font-size: 12px;
   letter-spacing: 0.32em;
-  color: var(--gold);
-  opacity: 0.9;
-  z-index: 4;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  opacity: 0.95;
+  z-index: 7;
 }
 /* 首页盒子：呼吸浮动 */
 .landing__box {
@@ -750,57 +789,6 @@
   color: var(--gold, #f5c542);
 }
 
-/* ========== GuideOverlay 新手引导 ========== */
-.guide {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: rgba(4, 4, 8, 0.82);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.guide__panel {
-  width: min(400px, 92vw);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--bg-2);
-  padding: 24px 22px;
-  animation: rise 0.4s ease both;
-  text-align: center;
-}
-.guide__avatar {
-  width: 92px;
-  height: 92px;
-  margin: 0 auto 14px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid var(--gold);
-  animation: float-y 3.4s ease-in-out infinite;
-}
-.guide__text {
-  min-height: 72px;
-  font-size: 16px;
-  line-height: 1.9;
-  letter-spacing: 0.04em;
-  text-align: left;
-}
-.guide__step {
-  margin-top: 12px;
-  color: var(--ink-faint);
-  font-size: 11px;
-  letter-spacing: 0.3em;
-}
-.guide__actions {
-  margin-top: 18px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.guide__actions .btn { flex: 1 1 120px; padding: 12px; font-size: 14px; }
-
 /* ========== 3D 鉴赏（model-viewer / 降级立绘） ==========  */
 .viewer {
   position: fixed;
@@ -917,7 +905,6 @@
   .wall { padding-left: 16px; padding-right: 16px; }
   .wall__grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
   .reveal__card { padding: 18px 16px; }
-  .guide__panel { padding: 20px 18px; }
 }
 
 /* 超小屏（iPhone SE 等 ≤340px）：标题与盒子再缩一档，网格变密 */
@@ -942,9 +929,6 @@
   .reveal { padding-top: 10px; padding-bottom: 10px; }
   .reveal__box-open { margin-top: 1.5vh; }
   .reveal__card { margin-top: 1.5vh; }
-  .guide__panel { padding: 16px; }
-  .guide__text { min-height: 56px; }
-  .guide__avatar { width: 72px; height: 72px; margin-bottom: 10px; }
   .viewer { padding-top: 10px; padding-bottom: 10px; }
 }
 
@@ -953,7 +937,7 @@
   .landing > div { max-width: 560px; }
   .mystery-box { width: 140px; height: 112px; }
   .reveal__card, .reveal__actions { width: min(480px, 92vw); }
-  .guide__panel, .detail__card { width: min(440px, 92vw); }
+  .detail__card { width: min(440px, 92vw); }
 }
 
 /* 大屏桌面：进一步放宽内容宽度上限，避免元素过窄 */

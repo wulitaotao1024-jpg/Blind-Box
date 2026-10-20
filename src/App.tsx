@@ -4,9 +4,8 @@ import Landing from './screens/Landing'
 import Reveal from './screens/Reveal'
 import Story from './screens/Story'
 import Wall from './screens/Wall'
-import GuideOverlay from './components/GuideOverlay'
 import { IPS } from './data/ips'
-import { createBoxState, draw } from './logic/boxReducer'
+import { draw } from './logic/boxReducer'
 import { collect } from './logic/collection'
 import { loadState, saveState, todayStr } from './logic/storage'
 import type { Persisted } from './logic/storage'
@@ -116,15 +115,6 @@ export default function App() {
           onDraw={openBox}
           onShare={share}
           onReplay={() => setScreen('landing')}
-        />
-      )}
-
-      {/* F6 新手引导：首访弹出，可跳过 */}
-      {!persisted.guideDone && screen === 'landing' && (
-        <GuideOverlay
-          onDone={() => {
-            update({ ...persisted, guideDone: true, box: createBoxState() })
-          }}
         />
       )}
     </div>

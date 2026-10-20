@@ -7,7 +7,6 @@ export interface Persisted {
   box: BoxState
   collected: string[]
   soundOn: boolean
-  guideDone: boolean
   lastLoginDate: string // YYYY-MM-DD，用于每日登录 +1 抽
   dailyDrawUsed: boolean // 今日登录补给是否已用
   shareDrawUsed: boolean // 今日分享补给是否已用（每日上限1次）
@@ -17,7 +16,6 @@ const DEFAULTS: Persisted = {
   box: { drawnCount: 0, pitySmall: 0, pityBig: 0, pityHard: 0, firstDrawDone: false },
   collected: [],
   soundOn: true,
-  guideDone: false,
   lastLoginDate: '',
   dailyDrawUsed: false,
   shareDrawUsed: false,
