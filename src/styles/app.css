@@ -374,14 +374,14 @@
 }
 .doors--open .doors__hint { opacity: 0; transition: opacity 0.4s; animation: none; }
 
-/* CSS 画的盒子（五彩多巴胺礼物盒，会呼吸的开启按钮）。动画由外层 .landing__box / .endcard__box / .endcard__drop 驱动 */
+/* CSS 画的盒子（皮克斯风礼物盒，会呼吸的开启按钮）。配色与首页黄昏街景同源 */
 .mystery-box {
   width: 120px;
   height: 96px;
   position: relative;
-  filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 16px 26px rgba(46, 18, 56, 0.55));
 }
-/* 盒身：五彩渐变 + 内高光 */
+/* 盒身：珊瑚粉→紫罗兰，圆角更饱满（皮克斯卡通比例） */
 .mystery-box__body {
   position: absolute;
   bottom: 0;
@@ -389,13 +389,14 @@
   width: 100%;
   height: 66%;
   z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 6px 6px 14px 14px;
+  border: 1px solid rgba(255, 246, 224, 0.65);
+  border-radius: 10px 10px 18px 18px;
   background:
-    linear-gradient(135deg, #ff6fae 0%, #b388ff 34%, #5ad1ff 67%, #7be495 100%);
+    radial-gradient(120% 80% at 20% 0%, rgba(255, 255, 255, 0.35), transparent 50%),
+    linear-gradient(165deg, #ff9ec4 0%, #ff6fae 42%, #c96ad4 78%, #a35ad0 100%);
   box-shadow:
-    inset 0 8px 14px rgba(255, 255, 255, 0.35),
-    inset 0 -14px 20px rgba(80, 20, 90, 0.35);
+    inset 0 10px 16px rgba(255, 255, 255, 0.32),
+    inset 0 -16px 22px rgba(120, 40, 110, 0.4);
   overflow: hidden;
 }
 /* 盒身顶部高光 */
@@ -405,16 +406,16 @@
   left: 0;
   width: 100%;
   height: 44%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 100%);
-  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 100%);
+  border-radius: 10px 10px 0 0;
   pointer-events: none;
 }
-/* 礼物丝带（竖 + 横，奶白光泽） */
+/* 礼物丝带（竖 + 横，奶油缎面光泽） */
 .mystery-box__ribbon {
   position: absolute;
   z-index: 2;
-  background: linear-gradient(180deg, #ffffff, #ffe6f6);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  background: linear-gradient(180deg, #fff9ea, #ffe7c2 60%, #f7c98f);
+  box-shadow: 0 0 8px rgba(255, 230, 180, 0.55);
 }
 .mystery-box__ribbon--v {
   top: 0;
@@ -430,7 +431,7 @@
   width: 100%;
   height: 17%;
 }
-/* 盒盖：暖色渐变 */
+/* 盒盖：金橘暖色 + 奶油描边（在紫粉背景上跳出） */
 .mystery-box__lid {
   position: absolute;
   top: 0;
@@ -438,73 +439,88 @@
   width: 112%;
   height: 40%;
   z-index: 3;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 11px 11px 5px 5px;
+  border: 1px solid rgba(255, 249, 234, 0.85);
+  border-radius: 14px 14px 6px 6px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%),
-    linear-gradient(135deg, #ffe14d 0%, #ff9e6d 100%);
-  box-shadow: inset 0 3px 7px rgba(255, 255, 255, 0.5), 0 5px 12px rgba(0, 0, 0, 0.4);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 48%),
+    linear-gradient(135deg, #ffd76a 0%, #ffb15e 45%, #ff8f5e 100%);
+  box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.55), 0 6px 14px rgba(46, 18, 56, 0.45);
 }
-/* 蝴蝶结（奶白丝带） */
+/* 蝴蝶结（珊瑚→金橘渐变缎带） */
 .mystery-box__bow {
   position: absolute;
   top: -14px;
   left: 50%;
   transform: translateX(-50%);
-  width: 46px;
-  height: 32px;
+  width: 52px;
+  height: 34px;
   z-index: 4;
 }
 .mystery-box__loop {
   position: absolute;
-  top: 6px;
-  width: 22px;
-  height: 22px;
+  top: 4px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #ffffff, #ffd9ef);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 -3px 5px rgba(0, 0, 0, 0.12);
+  background: linear-gradient(180deg, #ffb37a, #ff7a9e 70%, #e8609a);
+  box-shadow: 0 2px 6px rgba(46, 18, 56, 0.3), inset 0 -4px 6px rgba(160, 60, 110, 0.25);
 }
-.mystery-box__loop--l { left: -3px; transform: rotate(-22deg); }
-.mystery-box__loop--r { right: -3px; transform: rotate(22deg); }
+.mystery-box__loop--l { left: -4px; transform: rotate(-22deg); }
+.mystery-box__loop--r { right: -4px; transform: rotate(22deg); }
 .mystery-box__knot {
   position: absolute;
-  top: 9px;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
-  width: 16px;
-  height: 16px;
-  border-radius: 6px;
-  background: linear-gradient(180deg, #ffffff, #ffd9ef);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  width: 17px;
+  height: 17px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #ffc98a, #ff8f6b);
+  box-shadow: 0 2px 5px rgba(46, 18, 56, 0.35);
+  z-index: 2;
+}
+/* 蝴蝶结飘带尾巴（两侧垂下，增加灵动） */
+.mystery-box__tail {
+  position: absolute;
+  top: 16px;
+  width: 8px;
+  height: 20px;
+  border-radius: 2px 2px 5px 5px;
+  background: linear-gradient(180deg, #ffb37a, #e8609a);
+  box-shadow: 0 2px 4px rgba(46, 18, 56, 0.3);
   z-index: 1;
 }
-/* 多巴胺闪光点 */
+.mystery-box__tail--l { left: 6px; transform: rotate(14deg); transform-origin: top center; }
+.mystery-box__tail--r { right: 6px; transform: rotate(-14deg); transform-origin: top center; }
+/* 四角星闪光（clip-path 星形，比圆点更魔法） */
 .mystery-box__spark {
   position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
   z-index: 6;
+  background: currentColor;
+  clip-path: polygon(50% 0%, 63% 37%, 100% 50%, 63% 63%, 50% 100%, 37% 63%, 0% 50%, 37% 37%);
   filter: drop-shadow(0 0 5px currentColor);
   animation: twinkle 1.8s ease-in-out infinite;
 }
-.mystery-box__spark--1 { top: -8px; right: 4px; color: #ff5fa2; background: #ff5fa2; }
-.mystery-box__spark--2 { bottom: 12px; left: -9px; color: #29e0d6; background: #29e0d6; animation-delay: 0.6s; }
-.mystery-box__spark--3 { bottom: -2px; right: -7px; color: #ffd23f; background: #ffd23f; animation-delay: 1.1s; }
+.mystery-box__spark--1 { top: -10px; right: 2px; color: #fff3c4; }
+.mystery-box__spark--2 { bottom: 14px; left: -12px; color: #ffd76a; animation-delay: 0.6s; }
+.mystery-box__spark--3 { bottom: -4px; right: -10px; color: #ff9ec4; animation-delay: 1.1s; }
+.mystery-box__spark--4 { top: 34%; left: -14px; color: #fff9ea; width: 7px; height: 7px; animation-delay: 1.5s; }
 @keyframes twinkle {
-  0%, 100% { transform: scale(0.5); opacity: 0.35; }
-  50% { transform: scale(1.15); opacity: 1; }
+  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
+  50% { transform: scale(1.1) rotate(20deg); opacity: 1; }
 }
-/* 盒底彩色暖光，呼吸 */
+/* 盒底暖光，呼吸 */
 .mystery-box__glow {
   position: absolute;
   left: 50%;
-  bottom: -10px;
+  bottom: -12px;
   transform: translateX(-50%);
-  width: 84%;
-  height: 16px;
+  width: 86%;
+  height: 18px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255, 95, 162, 0.9), rgba(177, 92, 255, 0.45) 55%, rgba(42, 224, 214, 0) 100%);
+  background: radial-gradient(closest-side, rgba(255, 214, 140, 0.95), rgba(255, 140, 110, 0.5) 55%, rgba(200, 100, 200, 0) 100%);
   filter: blur(10px);
   opacity: 0.9;
   z-index: 0;
@@ -522,6 +538,7 @@
   opacity: 0.95;
   z-index: 7;
 }
+
 /* 首页魔法之门：交互与动画见 .doors 区块 */
 
 /* ========== Story（无缝视频） ========== */
@@ -614,9 +631,11 @@
   justify-content: center;
   gap: 34px;
   overflow-y: auto;
+  /* 与首页「第六大道黄昏街景」同源的紫粉渐变 + 暖阳消失点光晕 */
   background:
-    radial-gradient(60% 40% at 50% 62%, rgba(245, 197, 66, 0.1), transparent 70%),
-    #05050a;
+    radial-gradient(58% 40% at 50% 66%, rgba(255, 220, 160, 0.3), transparent 70%),
+    radial-gradient(90% 60% at 50% 112%, rgba(255, 150, 100, 0.24), transparent 66%),
+    linear-gradient(180deg, #241a3e 0%, #3a2557 32%, #6b3a63 60%, #a05a68 82%, #d97a56 100%);
   text-align: center;
   padding: 24px;
 }
@@ -631,6 +650,8 @@
   font-size: clamp(19px, 5.4vw, 28px);
   font-weight: 800;
   letter-spacing: 0.18em;
+  color: #fff6e8;
+  text-shadow: 0 2px 14px rgba(46, 18, 56, 0.45);
   animation: rise 0.7s 0.6s ease both;
 }
 .endcard__actions {
@@ -641,12 +662,12 @@
   animation: rise 0.7s 0.85s ease both;
 }
 .endcard__draws {
-  color: var(--ink-dim);
+  color: rgba(255, 240, 220, 0.85);
   font-size: 12px;
   letter-spacing: 0.24em;
 }
 .endcard__replay {
-  color: var(--ink-faint);
+  color: rgba(255, 235, 215, 0.7);
   font-size: 12px;
   letter-spacing: 0.2em;
 }
@@ -656,9 +677,11 @@
   position: fixed;
   inset: 0;
   overflow-y: auto;
+  /* 与 EndCard / 首页街景同源的黄昏渐变 */
   background:
-    radial-gradient(100% 60% at 50% 0%, rgba(245, 197, 66, 0.08), transparent 60%),
-    var(--bg);
+    radial-gradient(58% 40% at 50% 66%, rgba(255, 220, 160, 0.28), transparent 70%),
+    radial-gradient(90% 60% at 50% 112%, rgba(255, 150, 100, 0.22), transparent 66%),
+    linear-gradient(180deg, #241a3e 0%, #3a2557 32%, #6b3a63 60%, #a05a68 82%, #d97a56 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
