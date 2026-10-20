@@ -217,13 +217,14 @@
   transform-origin: left center;
   border-right: 2px solid rgba(0, 0, 0, 0.6);
   border-left: 1px solid rgba(255, 209, 128, 0.22);
-  border-radius: min(13vw, 170px) 0 0 0;
+  /* 椭圆拱顶：圆角横向铺满整扇门宽、纵向 26%，两扇合起来就是完整的半椭圆穹顶 */
+  border-radius: 100% 0 0 0 / 26% 0 0 0;
 }
 .doors__leaf--r {
   transform-origin: right center;
   border-left: 2px solid rgba(0, 0, 0, 0.6);
   border-right: 1px solid rgba(255, 209, 128, 0.22);
-  border-radius: 0 min(13vw, 170px) 0 0;
+  border-radius: 0 100% 0 0 / 0 26% 0 0;
 }
 /* 悬停微开，暗示可推 */
 .doors:not(.doors--open) .doors__leaf--l:hover { transform: rotateY(-4deg); }
@@ -303,117 +304,17 @@
   60% { filter: brightness(1.05) saturate(1.05); transform: scale(1.18); }
   to { filter: brightness(1.12) saturate(1.1); transform: scale(1.6); }
 }
-/* 黄昏天空 */
-.street__sky {
-  position: absolute;
-  inset: 0 0 42% 0;
-  background: linear-gradient(180deg, #251b40 0%, #4c3262 40%, #a05a68 72%, #e08a58 92%, #f2a963 100%);
-}
-/* 远处暖阳（消失点） */
-.street__glow {
-  position: absolute;
-  left: 50%;
-  top: 58%;
-  width: 46vmin;
-  height: 46vmin;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(255, 240, 200, 0.95) 0%, rgba(255, 205, 120, 0.55) 34%, rgba(255, 170, 90, 0.16) 62%, transparent 76%);
-  filter: blur(2px);
-}
-/* 道路两侧的皮克斯小店：剪影色建筑，位置/尺寸由组件内联样式控制（底边贴路面边缘，由近到远变小） */
-.street__b {
-  position: absolute;
-  background: linear-gradient(180deg, #322654 0%, #241a3e 55%, #1a1330 100%);
-  border: 1px solid rgba(255, 214, 150, 0.12);
-  border-bottom: none;
-  border-radius: 4px 4px 0 0;
-  box-shadow: 0 -6px 26px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-}
-/* 屋檐高光 */
-.street__b::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5%;
-  background: linear-gradient(180deg, rgba(255, 214, 150, 0.22), transparent);
-}
-/* 暖黄窗灯：稀疏的小圆点，随建筑尺寸等比缩放 */
-.street__b::before {
-  content: '';
+/* 街景大图（皮克斯风第六大道，AI 生成）：铺满门后，随开门动画向纵深推进 */
+.street__img {
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle at 30% 20%, rgba(255, 224, 160, 0.85) 0 8%, transparent 10%),
-    radial-gradient(circle at 70% 38%, rgba(255, 224, 160, 0.6) 0 7%, transparent 9%),
-    radial-gradient(circle at 40% 62%, rgba(255, 224, 160, 0.65) 0 8%, transparent 10%),
-    radial-gradient(circle at 74% 84%, rgba(255, 224, 160, 0.5) 0 6%, transparent 8%);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
 }
-/* 近处最大的店：霓虹灯牌闪烁 */
-.street__b--flicker .street__sign {
-  animation: neon-flicker 3.4s ease-in-out infinite;
-}
-@keyframes neon-flicker {
-  0%, 100% { opacity: 1; }
-  88% { opacity: 1; }
-  90% { opacity: 0.35; }
-  92% { opacity: 1; }
-  95% { opacity: 0.55; }
-  97% { opacity: 1; }
-}
-/* 竖排霓虹灯牌：带底板挂在内侧（朝向街道一边） */
-.street__sign {
-  position: absolute;
-  top: 8%;
-  writing-mode: vertical-rl;
-  letter-spacing: 0.26em;
-  font-weight: 700;
-  z-index: 2;
-  white-space: nowrap;
-  padding: 5% 3%;
-  background: rgba(10, 8, 22, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 3px;
-}
-.street__b--l .street__sign { right: 9%; }
-.street__b--r .street__sign { left: 9%; }
-/* 路面：中间亮、两侧暗的纵深梯形 */
-.street__road {
-  position: absolute;
-  inset: 42% 0 0 0;
-  background: linear-gradient(180deg, #171126, #100c1c);
-}
-.street__road::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(240, 180, 110, 0.22), rgba(120, 80, 60, 0.05) 70%);
-  clip-path: polygon(43% 0, 57% 0, 88% 100%, 12% 100%);
-}
-/* 路中虚线（透视收缩） */
-.street__line {
-  position: absolute;
-  inset: 42% 0 0 0;
-  background: repeating-linear-gradient(180deg, rgba(255, 232, 170, 0.75) 0 3.5%, transparent 3.5% 7%);
-  clip-path: polygon(49.2% 0, 50.8% 0, 53.5% 100%, 46.5% 100%);
-  opacity: 0.7;
-}
-/* 街灯：贴道路两侧边缘，由近到远逐个变小 */
-.street__lamps i {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #fff3c9, #ffc45e 60%, rgba(255, 170, 60, 0.2));
-  box-shadow: 0 0 12px rgba(255, 200, 110, 0.9);
-}
-.street__lamps i:nth-child(1) { left: 31.5%; top: 62%; width: 6px; height: 6px; }
-.street__lamps i:nth-child(2) { right: 31.5%; top: 62%; width: 6px; height: 6px; }
-.street__lamps i:nth-child(3) { left: 25%; top: 74%; width: 9px; height: 9px; }
-.street__lamps i:nth-child(4) { right: 25%; top: 74%; width: 9px; height: 9px; }
-.street__lamps i:nth-child(5) { left: 16.5%; top: 90%; width: 14px; height: 14px; }
-.street__lamps i:nth-child(6) { right: 16.5%; top: 90%; width: 14px; height: 14px; }
-
 /* 暖光收束罩：街道推进到眼前时轻拢，无缝切进视频 */
 .doors__veil {
   position: absolute;

@@ -3,58 +3,10 @@ import { track } from '../logic/track'
 
 /**
  * P1 首页「整屏魔法之门」：
- * 深色魔法双开大门居中矗立（圆拱顶部完整露出，两侧是粉紫黄昏渐变），
- * 门后藏着皮克斯风的第六大道街景——建筑沿道路两侧依次排开、由近到远变小，挂竖排霓虹灯牌。
- * 点击 → 双扇门 3D 推开 → 街道亮起并向纵深推进 → 暖光收束 → 转场进故事。
+ * 深色魔法双开大门居中矗立（椭圆拱顶完整露出，两侧是粉紫黄昏渐变），
+ * 门后是皮克斯风的第六大道街景大图（AI 生成，建筑沿道路两侧、霓虹灯牌）。
+ * 点击 → 双扇门 3D 推开 → 街道图由暗转亮并向纵深推进 → 暖光收束 → 转场进故事。
  */
-
-// 道路两边的小店：底边贴着路面边缘，由近（bottom:0）到远递减，内缘几乎贴住道路边线
-interface Shop {
-  side: 'left' | 'right'
-  inset: string // 距屏幕该侧的距离
-  bottom: string
-  w: string
-  h: string
-  fs: string
-  sign: string
-  neon: string
-  flicker?: boolean
-}
-const SHOPS_L: Shop[] = [
-  { side: 'left', inset: '0%', bottom: '0%', w: '13%', h: '42%', fs: 'clamp(14px, 1.8vw, 22px)', sign: '第六大道餐馆', neon: '#ff6fae', flicker: true },
-  { side: 'left', inset: '8.5%', bottom: '12%', w: '10%', h: '27%', fs: 'clamp(10px, 1.3vw, 15px)', sign: '美容美发', neon: '#5ad1ff' },
-  { side: 'left', inset: '17%', bottom: '24%', w: '8%', h: '21%', fs: 'clamp(8px, 1vw, 12px)', sign: '盒子商店', neon: '#ffd76a' },
-  { side: 'left', inset: '25.5%', bottom: '34%', w: '6%', h: '15%', fs: 'clamp(7px, 0.8vw, 10px)', sign: '洗衣店', neon: '#ff9e6d' },
-]
-const SHOPS_R: Shop[] = [
-  { side: 'right', inset: '0%', bottom: '0%', w: '13%', h: '42%', fs: 'clamp(14px, 1.8vw, 22px)', sign: '老皮面馆', neon: '#7be495' },
-  { side: 'right', inset: '8.5%', bottom: '12%', w: '10%', h: '27%', fs: 'clamp(10px, 1.3vw, 15px)', sign: '唱片行', neon: '#b388ff' },
-  { side: 'right', inset: '17%', bottom: '24%', w: '8%', h: '21%', fs: 'clamp(8px, 1vw, 12px)', sign: '甜品屋', neon: '#ff9e6d' },
-  { side: 'right', inset: '25.5%', bottom: '34%', w: '6%', h: '15%', fs: 'clamp(7px, 0.8vw, 10px)', sign: '便利店', neon: '#5ad1ff' },
-]
-
-function Building({ shop, z }: { shop: Shop; z: number }) {
-  return (
-    <span
-      className={`street__b street__b--${shop.side}${shop.flicker ? ' street__b--flicker' : ''}`}
-      style={{
-        [shop.side]: shop.inset,
-        bottom: shop.bottom,
-        width: shop.w,
-        height: shop.h,
-        fontSize: shop.fs,
-        zIndex: z,
-      }}
-    >
-      <span
-        className="street__sign"
-        style={{ color: shop.neon, textShadow: `0 0 6px ${shop.neon}, 0 0 16px ${shop.neon}, 0 0 30px ${shop.neon}` }}
-      >
-        {shop.sign}
-      </span>
-    </span>
-  )
-}
 
 export default function MagicDoor({ onOpen }: { onOpen: () => void }) {
   const [open, setOpen] = useState(false)
@@ -69,24 +21,12 @@ export default function MagicDoor({ onOpen }: { onOpen: () => void }) {
 
   return (
     <div className={`doors${open ? ' doors--open' : ''}`}>
-      {/* 门后世界：皮克斯风第六大道（黄昏 + 道路两侧小店霓虹 + 纵深马路）。关门时隐藏 */}
+      {/* 门后世界：皮克斯风第六大道街景（关门时隐藏）。transform-origin 与街道纵深推进的中心一致 */}
       <div className="street" aria-hidden="true">
-        <span className="street__sky" />
-        <span className="street__glow" />
-        <span className="street__road" />
-        <span className="street__line" />
-        {SHOPS_L.map((s, i) => (
-          <Building key={`l-${s.sign}`} shop={s} z={9 - i} />
-        ))}
-        {SHOPS_R.map((s, i) => (
-          <Building key={`r-${s.sign}`} shop={s} z={9 - i} />
-        ))}
-        <span className="street__lamps">
-          <i /><i /><i /><i /><i /><i />
-        </span>
+        <img className="street__img" src="/img/street-dusk.jpg" alt="" draggable={false} />
       </div>
 
-      {/* 双扇大门：居中矗立，底部落地、顶部留空让圆拱完整露出 */}
+      {/* 双扇大门：居中矗立，底部落地、顶部留空让椭圆拱顶完整露出 */}
       <button
         className="doors__leaf doors__leaf--l"
         onClick={push}
