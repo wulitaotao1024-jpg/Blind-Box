@@ -1,6 +1,7 @@
 // 埋点 stub（PRD 第十章事件表）：MVP 打点先入内存队列 + console，
 // 接入真实上报（如神策/GA）时替换 report 函数即可，事件名与参数保持不变。
 export type TrackEvent =
+  | 'door_open'
   | 'video_start'
   | 'video_complete'
   | 'video_skip'

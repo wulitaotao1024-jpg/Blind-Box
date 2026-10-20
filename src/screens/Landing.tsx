@@ -1,7 +1,7 @@
-import MysteryBox from '../components/MysteryBox'
+import MagicDoor from '../components/MagicDoor'
 import { FOOTER_LINE, HOME_TITLE } from '../data/subtitles'
 
-// P1 首页氛围屏：标题 + 会呼吸的盒子（盒子即「开启」按钮，是场景的一部分）
+// P1 首页氛围屏：标题（两行）+ 皮克斯风魔法之门（门即「推开盒隙」的开启按钮）
 export default function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="landing">
@@ -15,10 +15,8 @@ export default function Landing({ onStart }: { onStart: () => void }) {
         <p className="landing__sub">第六大道 · IP 收藏宇宙</p>
       </div>
 
-      <div className="landing__box-zone">
-        <button onClick={onStart} aria-label="点亮盒子，进入故事">
-          <MysteryBox className="landing__box" hint="点亮开启" />
-        </button>
+      <div className="landing__door-zone">
+        <MagicDoor onOpen={onStart} />
         <span className="landing__footer">{FOOTER_LINE}</span>
       </div>
     </div>
