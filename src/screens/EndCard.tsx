@@ -13,6 +13,10 @@ export default function EndCard({
 }) {
   return (
     <div className="endcard">
+      <header className="brand brand--corner">
+        <span className="brand__zh">盒隙</span>
+        <span className="brand__en">BLINDGAP</span>
+      </header>
       <div className="endcard__drop">
         <button onClick={onOpen} aria-label="开盒">
           <MysteryBox className="endcard__box" />
