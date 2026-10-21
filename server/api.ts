@@ -1,8 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomBytes } from 'node:crypto'
-import { createBoxState, draw } from '../src/logic/boxReducer'
+import { createBoxState, draw, nextStateAfter } from '../src/logic/boxReducer'
 import { IPS } from '../src/data/ips'
+import { isOfferExhausted, buildOffer } from '../src/logic/offer'
+import { OFFER_REROLL_LIMIT, OFFER_SIZE } from '../src/logic/types'
 import { todayStr } from '../src/logic/dates'
 import type { BoxState, IpDef } from '../src/logic/types'
 import * as db from './db'
@@ -35,6 +37,17 @@ export interface MeDto {
   cards: Array<{ ipId: string; count: number; firstAt: number }>
   supply: SupplyDto
   drawsLeft: number
+}
+
+/** 明牌六选一的一批盒子（F1 交互） */
+export interface OfferDto {
+  /** 本批 id：抽卡时要回传，服务端据此校验「只能从这一批里选」 */
+  offerId: string
+  ids: string[]
+  opened: string[]
+  rerollsLeft: number
+  /** 首抽未完成时只允许选引导款（保住 F6 首抽必得 000） */
+  firstDrawOnly: boolean
 }
 
 export interface ApiOptions {
@@ -183,14 +196,133 @@ export function createApiHandler(options: ApiOptions) {
     } satisfies MeDto)
   }
 
+  const noDrawsError = () =>
+    new HttpError(409, '今日补给已用完，明天登录 +1，或分享再 +1', 'NO_DRAWS')
+
+  // 明牌六选一：取当批 6 只（没有/已拆完就新开一批；reroll=true 换新一批并扣一次换批额度）
+  const handleOffer = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+    const userId = requireUser(req, res)
+    if (!userId) return
+    const body = (await readJsonBody(req)) as { reroll?: boolean }
+    const day = today()
+    const supply = db.ensureSupplyToday(database, userId, day)
+    const box = db.getBoxState(database, userId) ?? createBoxState()
+    const current = db.getOffer(database, userId, day)
+
+    if (body.reroll === true) {
+      // 先做「这一批能不能换」的校验，再看还有没有次数 —— 否则没次数时错误语义会被吞掉
+      if (!current) throw new HttpError(400, '当前没有可更换的一批，请先取一批盒子')
+      if (current.opened.length > 0) {
+        throw new HttpError(409, '这一批已经拆过了，不能整批换掉', 'OFFER_OPENED')
+      }
+      if (current.rerolls_left <= 0) {
+        throw new HttpError(409, '换一批次数已用完，就从这一批里挑一只吧', 'NO_REROLL')
+      }
+      if (drawsLeftOf(supply) <= 0) throw noDrawsError()
+      const fresh = db.createOffer(database, {
+        id: randomBytes(16).toString('hex'),
+        userId,
+        day,
+        ids: buildOffer(box, pool, secureRng),
+        rerollsLeft: current.rerolls_left - 1,
+        now: now(),
+      })
+      return sendJson(res, 200, toOfferDto(fresh, box))
+    }
+
+    // 非换批：没有 / 已拆完 → 新开一批（换批额度重置）；否则原样返回（保留已拆状态）
+    if (!current || isOfferExhausted(current.ids, current.opened)) {
+      if (drawsLeftOf(supply) <= 0) throw noDrawsError()
+      const fresh = db.createOffer(database, {
+        id: randomBytes(16).toString('hex'),
+        userId,
+        day,
+        ids: buildOffer(box, pool, secureRng),
+        rerollsLeft: OFFER_REROLL_LIMIT,
+        now: now(),
+      })
+      return sendJson(res, 200, toOfferDto(fresh, box))
+    }
+    sendJson(res, 200, toOfferDto(current, box))
+  }
+
+  const toOfferDto = (row: db.OfferRow, box: BoxState): OfferDto => ({
+    offerId: row.id,
+    ids: row.ids,
+    opened: row.opened,
+    rerollsLeft: row.rerolls_left,
+    firstDrawOnly: !box.firstDrawDone,
+  })
+
   const handleDraw = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const userId = requireUser(req, res)
     if (!userId) return
+    const body = (await readJsonBody(req, 8192, true)) as { offerId?: string; pickId?: string }
     const supply = db.ensureSupplyToday(database, userId, today())
-    if (drawsLeftOf(supply) <= 0) {
-      throw new HttpError(409, '今日补给已用完，明天登录 +1，或分享再 +1')
-    }
     const box = db.getBoxState(database, userId) ?? createBoxState()
+
+    // —— 明牌六选一：玩家从当批里自己挑一只 ——
+    // 校验顺序很关键：先判「这只能不能拆」，再判「还有没有次数」，
+    // 否则次数为 0 时会先把「已拆过 / 批次失效」这些明确语义吞成一句「补给用完」。
+    if (body.offerId && body.pickId) {
+      const offer = db.getOffer(database, userId, today())
+      if (!offer || offer.id !== body.offerId) {
+        throw new HttpError(400, '这一批盒子已失效，请重新取一批', 'OFFER_STALE')
+      }
+      if (!offer.ids.includes(body.pickId)) {
+        throw new HttpError(400, '这只不在当前这一批里', 'PICK_NOT_IN_OFFER')
+      }
+      if (offer.opened.includes(body.pickId)) {
+        throw new HttpError(409, '这只已经拆过了，换一只吧', 'PICK_ALREADY_OPENED')
+      }
+      if (drawsLeftOf(supply) <= 0) throw noDrawsError()
+      const ip = pool.find((p) => p.id === body.pickId)
+      if (!ip || ip.status !== 'ready') {
+        throw new HttpError(400, '这只还没上架', 'PICK_NOT_READY')
+      }
+      // 首抽：只允许引导款（保住 F6 首抽必得 000）
+      if (!box.firstDrawDone && ip.rarity !== 'guide') {
+        throw new HttpError(409, '第一只先领走老皮吧（新手必得）', 'FIRST_DRAW_GUIDE_ONLY')
+      }
+
+      const next = nextStateAfter(box, ip.rarity)
+      const nextSupply: db.SupplyRow = {
+        last_login_date: supply.last_login_date,
+        daily_draw_used: 1,
+        share_draw_used: supply.share_draw_used,
+        draws_bonus: supply.daily_draw_used ? Math.max(0, supply.draws_bonus - 1) : supply.draws_bonus,
+      }
+
+      database.exec('BEGIN IMMEDIATE')
+      let isNew: boolean
+      try {
+        isNew = db.getCardCount(database, userId, ip.id) === 0
+        db.saveBoxState(database, userId, next)
+        db.incrementCard(database, userId, ip.id, now())
+        db.updateSupply(database, userId, {
+          lastLoginDate: nextSupply.last_login_date,
+          dailyDrawUsed: !!nextSupply.daily_draw_used,
+          shareDrawUsed: !!nextSupply.share_draw_used,
+          drawsBonus: nextSupply.draws_bonus,
+        })
+        db.markOfferOpened(database, offer.id, ip.id)
+        database.exec('COMMIT')
+      } catch (err) {
+        database.exec('ROLLBACK')
+        throw err
+      }
+
+      const updated = db.getOffer(database, userId, today())
+      return sendJson(res, 200, {
+        result: { ipId: ip.id, rarity: ip.rarity, forcedBy: 'pick' },
+        isNew,
+        box: next,
+        drawsLeft: drawsLeftOf(nextSupply),
+        offer: updated ? toOfferDto(updated, next) : null,
+      })
+    }
+
+    if (drawsLeftOf(supply) <= 0) throw noDrawsError()
 
     // 与前端同序：先扣今日登录补给，没有才扣分享余额
     const consumeDaily = !supply.daily_draw_used
@@ -339,6 +471,8 @@ export function createApiHandler(options: ApiOptions) {
           return handleLogout(req, res)
         case 'GET /api/me':
           return handleMe(req, res)
+        case 'POST /api/offer':
+          return await handleOffer(req, res)
         case 'POST /api/draw':
           return await handleDraw(req, res)
         case 'POST /api/share':

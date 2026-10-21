@@ -35,8 +35,15 @@ export interface BoxState {
 export interface DrawResult {
   ipId: string
   rarity: Rarity
-  forcedBy: 'guide' | 'none' | 'small' | 'big' | 'hard'
+  // 'pick' = 玩家从当批 6 个明牌里自己选的那一只（F1「六选一」交互）
+  forcedBy: 'guide' | 'none' | 'small' | 'big' | 'hard' | 'pick'
 }
+
+// 每批明牌盒子数量与「换一批」上限（F1 六选一交互）
+export const OFFER_SIZE = 6
+// 换一批上限：明牌六选一已经大幅提高入手好卡的概率，再给无限换批会把保底体系冲掉，
+// 因此每批限 2 次（一批最多看 3 组）。想调松/调紧只改这一个常量（服务端同步生效）。
+export const OFFER_REROLL_LIMIT = 2
 
 // 保底数值（PRD F1 参考值，已拍板）
 export const PITY = {

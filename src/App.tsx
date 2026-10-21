@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import EndCard from './screens/EndCard'
 import Landing from './screens/Landing'
+import Offer from './screens/Offer'
 import Opening from './screens/Opening'
 import Reveal from './screens/Reveal'
 import Story from './screens/Story'
@@ -9,17 +10,18 @@ import Auth from './screens/Auth'
 import AuthEntry from './components/AuthEntry'
 import { IPS } from './data/ips'
 import { buildShareText } from './data/share'
+import { isOfferExhausted } from './logic/offer'
 import { loadState, resetGameState, saveState, todayStr } from './logic/storage'
 import type { Persisted } from './logic/storage'
 import { track } from './logic/track'
 import type { DrawResult } from './logic/types'
 import { api, ApiError } from './lib/apiClient'
-import type { CardDto, MeDto } from './lib/apiClient'
+import type { CardDto, MeDto, OfferDto } from './lib/apiClient'
 import { copyText } from './lib/clipboard'
 
-// 首页动线状态机（PRD 6.3）：landing → story → endcard → (opening →) reveal → wall
-// 新增 auth：登录/注册屏（游客可浏览，抽盒/再抽需登录）
-type Screen = 'landing' | 'story' | 'endcard' | 'opening' | 'reveal' | 'wall' | 'auth'
+// 首页动线状态机（PRD 6.3）：landing → story → endcard → offer(明牌六选一) → opening → reveal → wall
+// offer 屏是新增的「互动抽盒」：不是点一下就出结果，而是先摊 6 只、自己挑一只再开
+type Screen = 'landing' | 'story' | 'endcard' | 'offer' | 'opening' | 'reveal' | 'wall' | 'auth'
 
 interface LastResult extends DrawResult {
   isNew: boolean
@@ -37,10 +39,14 @@ export default function App() {
   const [persisted, setPersisted] = useState<Persisted>(() => loadState())
   const [last, setLast] = useState<LastResult | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
-  const [drawError, setDrawError] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   // 登录来源屏：记录是从哪里点开的登录，登录成功后回跳该屏（而非统一进图鉴墙）
   const [authReturn, setAuthReturn] = useState<Screen>('landing')
+  // 明牌六选一：当批 6 只 / 正在换批 / 从哪个屏进来的（返回时用得上）
+  const [offer, setOffer] = useState<OfferDto | null>(null)
+  const [rerolling, setRerolling] = useState(false)
+  const [offerFrom, setOfferFrom] = useState<Screen>('endcard')
+  const [pendingPick, setPendingPick] = useState<string | null>(null)
 
   const isAuthed = me !== null
   const user = me?.user ?? null
@@ -96,11 +102,70 @@ export default function App() {
     setScreen('auth')
   }, [])
 
-  // F1 抽盒（服务端）：POST /api/draw → 更新 me（box/cards/drawsLeft）→ 进揭晓屏
+  // 轻提示（复用分享的 toast 通道）
+  const flash = useCallback((msg: string) => {
+    setToast(msg)
+    window.setTimeout(() => setToast(null), 2600)
+  }, [])
+
+  // 明牌六选一：向服务端要一批 6 只 → 进选盒屏。未登录先去登录（回跳来源屏）
+  const loadOffer = useCallback(
+    async (from: Screen, opts?: { reroll?: boolean }) => {
+      if (opts?.reroll) setRerolling(true)
+      try {
+        const o = await api.offer(opts)
+        setOffer(o)
+        setOfferFrom(from)
+        track(opts?.reroll ? 'offer_reroll' : 'offer_view', {
+          rerollsLeft: o.rerollsLeft,
+          firstDrawOnly: o.firstDrawOnly,
+        })
+        setScreen('offer')
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          setMe(null)
+          setOffer(null)
+          goAuth(from)
+          return
+        }
+        flash(err instanceof ApiError ? err.message : '取盒失败，请稍后再试')
+        setScreen(from === 'wall' ? 'wall' : 'endcard')
+      } finally {
+        setRerolling(false)
+      }
+    },
+    [flash, goAuth],
+  )
+
+  // 开盒入口（末帧 / 图鉴墙统一走这里）：不再「点一下就出结果」，先摊 6 只让玩家自己挑
+  const startDraw = useCallback(
+    (from: Screen) => {
+      if (!isAuthed) {
+        goAuth(from)
+        return
+      }
+      if (drawsLeft <= 0) {
+        setScreen('wall')
+        return
+      }
+      void loadOffer(from)
+    },
+    [isAuthed, drawsLeft, goAuth, loadOffer],
+  )
+
+  // 挑中一只 → 播开盒演出 → 演完再真正去服务端抽这只
+  const pickOffer = useCallback((ipId: string) => {
+    setPendingPick(ipId)
+    track('offer_pick', { ip: ipId })
+    setScreen('opening')
+  }, [])
+
   const performDraw = useCallback(async () => {
-    setDrawError(null)
+    const ipId = pendingPick
+    const cur = offer
+    if (!ipId || !cur) return
     try {
-      const resp = await api.draw()
+      const resp = await api.draw({ offerId: cur.offerId, pickId: ipId })
       setMe((prev) =>
         prev
           ? {
@@ -111,42 +176,37 @@ export default function App() {
             }
           : prev,
       )
+      if (resp.offer) setOffer(resp.offer) // 服务端回传这批的最新状态：刚才那只已标记拆过
       setLast({ ...resp.result, isNew: resp.isNew })
-      track('open_box', { source: 'server' })
+      track('open_box', { source: 'server', pick: ipId })
       track('box_result', { ip: resp.result.ipId, rarity: resp.result.rarity, duplicate: !resp.isNew })
       setScreen('reveal')
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        // 会话失效：退回登录（回跳抽盒页，登录后可直接继续开盒）
         setMe(null)
+        setOffer(null)
         goAuth('endcard')
         return
       }
-      setDrawError('抽盒失败了，请稍后再试')
+      flash(err instanceof ApiError ? err.message : '抽盒失败了，请稍后再试')
+      setScreen('offer') // 失败回选盒屏重挑，不把玩家甩进图鉴墙
+    } finally {
+      setPendingPick(null)
     }
-  }, [goAuth])
+  }, [offer, pendingPick, flash, goAuth])
 
-  // 首抽入口（EndCard 开盒按钮）：未登录 → 进 auth（回跳抽盒页，解锁开盒按钮）；已登录 → 直接抽
-  const firstDraw = useCallback(() => {
-    if (!isAuthed) {
-      goAuth('endcard')
-      return
-    }
-    void performDraw()
-  }, [isAuthed, performDraw, goAuth])
-
-  // 再抽入口（Reveal 再来一发 / Wall 开盒）：未登录 → 进 auth（回跳图鉴墙，解锁开盒按钮）；已登录 → 演出后抽
-  const redraw = useCallback(() => {
-    if (!isAuthed) {
-      goAuth('wall')
-      return
-    }
+  // 揭晓页「再挑一只」：还有次数就回到刚才那一批（拆过的那只保持打开、不能再点）
+  const backToOffer = useCallback(() => {
     if (drawsLeft <= 0) {
       setScreen('wall')
       return
     }
-    setScreen('opening')
-  }, [isAuthed, drawsLeft, goAuth])
+    if (offer && !isOfferExhausted(offer.ids, offer.opened)) {
+      setScreen('offer')
+      return
+    }
+    void loadOffer(offerFrom)
+  }, [drawsLeft, offer, offerFrom, loadOffer])
 
   // F4 分享：复制「推广文案 + 链接」到剪贴板（微信里粘贴即可，不依赖任何平台 SDK），
   // 点击即标记今日分享补给 +1 发。登录态走服务端，游客态走本地
@@ -221,6 +281,7 @@ export default function App() {
       /* 忽略：本地直接清态 */
     }
     setMe(null)
+    setOffer(null)
     setScreen('landing')
   }, [])
 
@@ -243,13 +304,25 @@ export default function App() {
         <EndCard
           drawsLeft={drawsLeft}
           locked={!isAuthed}
-          onOpen={firstDraw}
+          onOpen={() => startDraw('endcard')}
           onWall={() => setScreen('wall')}
           onReplay={() => setScreen('landing')}
         />
       )}
 
-      {/* 再抽一次 / 图鉴墙开盒：先播开盒演出，放完再抽 */}
+      {/* 明牌六选一：摊 6 只，自己挑一只；不满意可换一批（每天 2 次） */}
+      {screen === 'offer' && offer && (
+        <Offer
+          offer={offer}
+          drawsLeft={drawsLeft}
+          rerolling={rerolling}
+          onPick={pickOffer}
+          onReroll={() => void loadOffer(offerFrom, { reroll: true })}
+          onBack={() => setScreen(offerFrom === 'wall' ? 'wall' : 'endcard')}
+        />
+      )}
+
+      {/* 挑中之后：先播开盒演出，放完再带着 pickId 去服务端抽这一只 */}
       {screen === 'opening' && <Opening onDone={() => void performDraw()} />}
 
       {screen === 'reveal' && last && lastIp && (
@@ -258,7 +331,8 @@ export default function App() {
           isNew={last.isNew}
           drawsLeft={drawsLeft}
           onContinue={() => setScreen('wall')}
-          onDrawAgain={redraw}
+          onDrawAgain={backToOffer}
+          drawAgainLabel={drawsLeft > 0 ? `再挑一只（剩 ${drawsLeft}）` : '明日再来'}
         />
       )}
 
@@ -268,7 +342,7 @@ export default function App() {
           drawsLeft={drawsLeft}
           shareCopied={shareCopied}
           locked={!isAuthed}
-          onDraw={redraw}
+          onDraw={() => startDraw('wall')}
           onShare={() => void share()}
           onReplay={() => setScreen('landing')}
         />
@@ -276,8 +350,11 @@ export default function App() {
 
       {screen === 'auth' && <Auth onSkip={() => setScreen('landing')} onAuthed={handleAuthed} />}
 
-      {drawError && <div className="toast toast--error" onClick={() => setDrawError(null)}>{drawError}</div>}
-      {!drawError && toast && <div className="toast" onClick={() => setToast(null)}>{toast}</div>}
+      {toast && (
+        <div className="toast" onClick={() => setToast(null)}>
+          {toast}
+        </div>
+      )}
     </div>
   )
 }

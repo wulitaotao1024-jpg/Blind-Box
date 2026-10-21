@@ -11,12 +11,15 @@ export default function Reveal({
   drawsLeft,
   onContinue,
   onDrawAgain,
+  drawAgainLabel,
 }: {
   ip: IpDef
   isNew: boolean
   drawsLeft: number
   onContinue: () => void
   onDrawAgain: () => void
+  /** 明牌六选一之后，这一颗是「回到刚才那一批再挑一只」 */
+  drawAgainLabel?: string
 }) {
   return (
     <div className="reveal">
@@ -69,10 +72,15 @@ export default function Reveal({
       <div className="reveal__actions">
         <button className="btn btn--gold" onClick={onContinue}>收入图鉴墙 ›</button>
         <div className="reveal__row">
+          {/* 还有次数 → 回到刚才那一批（拆过的那只保持打开、不能再点）；没有就锁住 */}
           {drawsLeft > 0 ? (
-            <button className="btn btn--ghost" onClick={onDrawAgain}>再来一发（剩 {drawsLeft}）</button>
+            <button className="btn btn--ghost" onClick={onDrawAgain}>
+              {drawAgainLabel ?? `再来一发（剩 ${drawsLeft}）`}
+            </button>
           ) : (
-            <button className="btn btn--ghost" disabled>明日再来</button>
+            <button className="btn btn--ghost" disabled>
+              明日再来
+            </button>
           )}
         </div>
       </div>

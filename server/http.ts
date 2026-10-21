@@ -16,7 +16,11 @@ export class HttpError extends Error {
   }
 }
 
-export async function readJsonBody(req: IncomingMessage, limitBytes = 8192): Promise<unknown> {
+export async function readJsonBody(
+  req: IncomingMessage,
+  limitBytes = 8192,
+  allowEmpty = false,
+): Promise<unknown> {
   const chunks: Buffer[] = []
   let size = 0
   for await (const chunk of req) {
@@ -25,7 +29,11 @@ export async function readJsonBody(req: IncomingMessage, limitBytes = 8192): Pro
     if (size > limitBytes) throw new HttpError(413, '请求体过大')
     chunks.push(buf)
   }
-  if (size === 0) throw new HttpError(400, '请求体不能为空')
+  // POST /api/draw 等接口历史上是不带 body 调用的，保持兼容：允许空 body 时返回 {}
+  if (size === 0) {
+    if (allowEmpty) return {}
+    throw new HttpError(400, '请求体不能为空')
+  }
   try {
     return JSON.parse(Buffer.concat(chunks).toString('utf8'))
   } catch {

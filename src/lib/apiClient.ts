@@ -30,11 +30,23 @@ export interface MeDto {
   drawsLeft: number
 }
 
+/** 明牌六选一：服务端发的一批盒子（6 只编号 + 已拆记录 + 换批额度） */
+export interface OfferDto {
+  offerId: string
+  ids: string[]
+  opened: string[]
+  rerollsLeft: number
+  /** 首抽：这一批里只有引导款（№000）可以拆 */
+  firstDrawOnly: boolean
+}
+
 export interface DrawDto {
   result: DrawResult
   isNew: boolean
   box: BoxState
   drawsLeft: number
+  /** 指定抽（六选一）时回传这一批的最新状态；随机抽为 null */
+  offer: OfferDto | null
 }
 
 export interface ShareDto {
@@ -118,8 +130,14 @@ export const api = {
     return req<MeDto>('/api/me')
   },
 
-  async draw(): Promise<DrawDto> {
-    return req<DrawDto>('/api/draw', { method: 'POST' })
+  /** 明牌六选一：取当批 6 只；reroll=true 整批换掉（每天 2 次，且拆过就不能换） */
+  async offer(input?: { reroll?: boolean }): Promise<OfferDto> {
+    return req<OfferDto>('/api/offer', { method: 'POST', body: JSON.stringify(input ?? {}) })
+  },
+
+  /** 抽一发：不传 pick 走旧随机抽；传 pick 表示从这一批里自己挑的那只 */
+  async draw(pick?: { offerId: string; pickId: string }): Promise<DrawDto> {
+    return req<DrawDto>('/api/draw', { method: 'POST', body: JSON.stringify(pick ?? {}) })
   },
 
   async share(): Promise<ShareDto> {

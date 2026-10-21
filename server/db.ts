@@ -43,6 +43,17 @@ export interface SessionRow {
   expires_at: number
 }
 
+/** 明牌六选一的「当批盒子」：一天一批（换批即替换），拆过的那只记在 opened 里 */
+export interface OfferRow {
+  id: string
+  user_id: string
+  day: string
+  ids: string[] // 本批 6 个 IP 编号
+  opened: string[] // 本批已拆开的编号
+  rerolls_left: number
+  created_at: number
+}
+
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id           TEXT PRIMARY KEY,
@@ -74,6 +85,17 @@ CREATE TABLE IF NOT EXISTS supply (
   share_draw_used  INTEGER NOT NULL DEFAULT 0,
   draws_bonus      INTEGER NOT NULL DEFAULT 0
 );
+-- 明牌六选一：当批 6 只（F1 交互）。ids/opened 存 JSON 数组，按 (user_id, day) 唯一。
+CREATE TABLE IF NOT EXISTS offers (
+  id           TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day          TEXT NOT NULL,
+  ids          TEXT NOT NULL,
+  opened       TEXT NOT NULL DEFAULT '[]',
+  rerolls_left INTEGER NOT NULL DEFAULT 0,
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_offers_user_day ON offers(user_id, day);
 CREATE TABLE IF NOT EXISTS sessions (
   token      TEXT PRIMARY KEY,
   user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -250,6 +272,81 @@ export function updateSupply(
 }
 
 // —— 会话 ——
+
+// —— 明牌六选一：当批盒子 ——
+
+const rowToOffer = (row: Record<string, unknown>): OfferRow => {
+  const parse = (raw: unknown): string[] => {
+    try {
+      const v = JSON.parse(String(raw ?? '[]'))
+      return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+    } catch {
+      return []
+    }
+  }
+  return {
+    id: String(row.id),
+    user_id: String(row.user_id),
+    day: String(row.day),
+    ids: parse(row.ids),
+    opened: parse(row.opened),
+    rerolls_left: Number(row.rerolls_left),
+    created_at: Number(row.created_at),
+  }
+}
+
+export function getOffer(db: DatabaseSync, userId: string, day: string): OfferRow | undefined {
+  const row = db
+    .prepare('SELECT * FROM offers WHERE user_id = $userId AND day = $day ORDER BY created_at DESC LIMIT 1')
+    .get({ userId, day })
+  return row ? rowToOffer(row as Record<string, unknown>) : undefined
+}
+
+/** 新开一批（同时作废当天旧批）：换一批、批次拆完、首次进入都走这里 */
+export function createOffer(
+  db: DatabaseSync,
+  offer: { id: string; userId: string; day: string; ids: string[]; rerollsLeft: number; now: number },
+): OfferRow {
+  db.prepare('DELETE FROM offers WHERE user_id = $userId AND day = $day').run({
+    userId: offer.userId,
+    day: offer.day,
+  })
+  db.prepare(
+    `INSERT INTO offers (id, user_id, day, ids, opened, rerolls_left, created_at)
+     VALUES ($id, $userId, $day, $ids, '[]', $rerollsLeft, $now)`,
+  ).run({
+    id: offer.id,
+    userId: offer.userId,
+    day: offer.day,
+    ids: JSON.stringify(offer.ids),
+    rerollsLeft: offer.rerollsLeft,
+    now: offer.now,
+  })
+  return {
+    id: offer.id,
+    user_id: offer.userId,
+    day: offer.day,
+    ids: offer.ids,
+    opened: [],
+    rerolls_left: offer.rerollsLeft,
+    created_at: offer.now,
+  }
+}
+
+/** 标记本批里某只已被拆开（幂等） */
+export function markOfferOpened(db: DatabaseSync, offerId: string, ipId: string): OfferRow | undefined {
+  const cur = db.prepare('SELECT * FROM offers WHERE id = $id').get({ id: offerId }) as
+    | Record<string, unknown>
+    | undefined
+  if (!cur) return undefined
+  const row = rowToOffer(cur)
+  if (!row.opened.includes(ipId)) row.opened.push(ipId)
+  db.prepare('UPDATE offers SET opened = $opened WHERE id = $id').run({
+    opened: JSON.stringify(row.opened),
+    id: offerId,
+  })
+  return row
+}
 
 export function createSession(
   db: DatabaseSync,

@@ -54,6 +54,20 @@ const hasReadyRarity = (pool: IpDef[], rarity: Rarity) =>
   pool.some((p) => p.status === 'ready' && p.rarity === rarity)
 
 /**
+ * 计数推进：抽到「某稀有度」后的状态更新（以实际入手的稀有度为准）。
+ * 单独抽出供「明牌六选一」复用 —— 玩家自选的那只同样按实际稀有度走保底清零。
+ */
+export function nextStateAfter(state: BoxState, actual: Rarity): BoxState {
+  return {
+    drawnCount: state.drawnCount + 1,
+    pitySmall: actual === 'street' ? state.pitySmall + 1 : 0,
+    pityBig: actual === 'heat' || actual === 'ghost' ? 0 : state.pityBig + 1,
+    pityHard: actual === 'ghost' ? 0 : state.pityHard + 1,
+    firstDrawDone: true,
+  }
+}
+
+/**
  * 抽盒纯函数：给入当前状态 + RNG + IP 池，返回结果与新状态。
  * 保底优先级：幽灵硬保底 > 大保底(狠货+) > 小保底(限定+)。
  * 注意：幽灵硬保底仅在幽灵 IP 在售时强制兑现；未在售时计数照常累积，
@@ -102,13 +116,5 @@ export function draw(
 
   // —— 计数更新：以实际入手的 IP 稀有度为准清零对应保底 ——
   const actual = ip.rarity
-  const next: BoxState = {
-    drawnCount: state.drawnCount + 1,
-    pitySmall: actual === 'street' ? state.pitySmall + 1 : 0,
-    pityBig: actual === 'heat' || actual === 'ghost' ? 0 : state.pityBig + 1,
-    pityHard: actual === 'ghost' ? 0 : state.pityHard + 1,
-    firstDrawDone: true,
-  }
-
-  return { result: { ipId: ip.id, rarity: actual, forcedBy }, next }
+  return { result: { ipId: ip.id, rarity: actual, forcedBy }, next: nextStateAfter(state, actual) }
 }

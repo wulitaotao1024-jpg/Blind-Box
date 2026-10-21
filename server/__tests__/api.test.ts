@@ -364,6 +364,8 @@ describe('存量迁移 /api/migrate', () => {
       body: { box: { drawnCount: 5, firstDrawDone: true }, collected: ['001'] },
     })
     await c.draw() // 服务端产生新状态
+    // 快照：这一抽是随机的，可能正好抽到 005 —— 与「二次迁移有没有写入」无关，先记下来做增量比对
+    const before = (await c.call('/api/me')).json.cards.map((x: any) => x.ipId) as string[]
 
     const again = await c.call('/api/migrate', {
       method: 'POST',
@@ -371,9 +373,9 @@ describe('存量迁移 /api/migrate', () => {
     })
     expect(again.json.migrated).toBe(false)
     expect(again.json.box.drawnCount).toBe(6) // 5 + 迁移后那一抽；不被 99 覆盖
-    const ids = again.json.cards.map((x: any) => x.ipId)
-    expect(ids).not.toContain('002') // 二次迁移的 collected 不写入
-    expect(ids).not.toContain('005')
+    const ids = again.json.cards.map((x: any) => x.ipId) as string[]
+    const added = ids.filter((id) => !before.includes(id))
+    expect(added).toEqual([]) // 二次迁移一张都没写进去
     expect(ids).toContain('001') // 首次迁移的卡仍在（count 是否 +1 取决于随机抽卡，不断言）
   })
 
@@ -442,5 +444,87 @@ describe('限流与路由', () => {
     expect((await c.call('/api/nope')).status).toBe(404)
     expect((await c.call('/')).status).toBe(404)
     expect((await c.call('/api/me', { method: 'POST' })).status).toBe(404)
+  })
+})
+
+describe('明牌六选一 /api/offer + 指定抽 /api/draw', () => {
+  it('取一批 6 只；换一批扣额度，额度用完 409', async () => {
+    const c = new Client()
+    await c.register(CRED.username, CRED.password)
+
+    const o1 = await c.call('/api/offer', { method: 'POST', body: {} })
+    expect(o1.status).toBe(200)
+    expect(o1.json.ids).toHaveLength(6)
+    expect(new Set(o1.json.ids).size).toBe(6)
+    expect(o1.json.rerollsLeft).toBe(2)
+    expect(o1.json.firstDrawOnly).toBe(true) // 首抽：只允许选引导款
+
+    const o2 = await c.call('/api/offer', { method: 'POST', body: { reroll: true } })
+    expect(o2.status).toBe(200)
+    expect(o2.json.rerollsLeft).toBe(1)
+
+    const o3 = await c.call('/api/offer', { method: 'POST', body: { reroll: true } })
+    expect(o3.json.rerollsLeft).toBe(0)
+
+    const o4 = await c.call('/api/offer', { method: 'POST', body: { reroll: true } })
+    expect(o4.status).toBe(409)
+    expect(o4.json.code).toBe('NO_REROLL')
+  })
+
+  it('首抽只能领引导款：选别的会被拒', async () => {
+    const c = new Client()
+    await c.register(CRED.username, CRED.password)
+    const offer = (await c.call('/api/offer', { method: 'POST', body: {} })).json
+    const other = offer.ids.find((id: string) => id !== '000')
+
+    const bad = await c.call('/api/draw', { method: 'POST', body: { offerId: offer.offerId, pickId: other } })
+    expect(bad.status).toBe(409)
+    expect(bad.json.code).toBe('FIRST_DRAW_GUIDE_ONLY')
+
+    const ok = await c.call('/api/draw', { method: 'POST', body: { offerId: offer.offerId, pickId: '000' } })
+    expect(ok.status).toBe(200)
+    expect(ok.json.result.ipId).toBe('000')
+    expect(ok.json.result.forcedBy).toBe('pick')
+    expect(ok.json.offer.opened).toContain('000')
+  })
+
+  it('只能从当批里选：批次外的编号 / 拆过的那只都会被拒', async () => {
+    const c = new Client()
+    await c.register(CRED.username, CRED.password)
+    // 先把首抽用掉
+    const o1 = (await c.call('/api/offer', { method: 'POST', body: {} })).json
+    await c.call('/api/draw', { method: 'POST', body: { offerId: o1.offerId, pickId: '000' } })
+    await c.call('/api/share', { method: 'POST' }) // 补给 +1，才有第二抽
+
+    const o2 = (await c.call('/api/offer', { method: 'POST', body: {} })).json
+    expect(o2.opened).toContain('000') // 同一批，已拆的那只还在
+    const target = o2.ids.find((id: string) => id !== '000')
+
+    const outside = await c.call('/api/draw', {
+      method: 'POST',
+      body: { offerId: o2.offerId, pickId: '777' },
+    })
+    expect(outside.status).toBe(400)
+    expect(outside.json.code).toBe('PICK_NOT_IN_OFFER')
+
+    const first = await c.call('/api/draw', { method: 'POST', body: { offerId: o2.offerId, pickId: target } })
+    expect(first.status).toBe(200)
+    expect(first.json.result.ipId).toBe(target)
+
+    // 拆过的不能再拆
+    const twice = await c.call('/api/draw', { method: 'POST', body: { offerId: o2.offerId, pickId: target } })
+    expect(twice.status).toBe(409)
+    expect(twice.json.code).toBe('PICK_ALREADY_OPENED')
+  })
+
+  it('拆过之后不能再整批换掉', async () => {
+    const c = new Client()
+    await c.register(CRED.username, CRED.password)
+    const offer = (await c.call('/api/offer', { method: 'POST', body: {} })).json
+    await c.call('/api/draw', { method: 'POST', body: { offerId: offer.offerId, pickId: '000' } })
+
+    const reroll = await c.call('/api/offer', { method: 'POST', body: { reroll: true } })
+    expect(reroll.status).toBe(409)
+    expect(reroll.json.code).toBe('OFFER_OPENED')
   })
 })

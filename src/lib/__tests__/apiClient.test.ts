@@ -71,6 +71,49 @@ describe('apiClient', () => {
     expect(r.box.drawnCount).toBe(1)
   })
 
+  it('offer 取一批 6 只；reroll 随请求体发出', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      offerId: 'o1',
+      ids: ['000', '001', '002', '005', '006', '007'],
+      opened: [],
+      rerollsLeft: 2,
+      firstDrawOnly: true,
+    })
+    const r = await api.offer()
+    expect(fetchMock).toHaveBeenCalledWith('/api/offer', expect.objectContaining({ method: 'POST' }))
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body)).toEqual({})
+    expect(r.ids).toHaveLength(6)
+    expect(r.firstDrawOnly).toBe(true)
+
+    const rerollMock = mockFetchOnce(200, {
+      offerId: 'o2',
+      ids: ['000', '001', '002', '005', '006', '008'],
+      opened: [],
+      rerollsLeft: 1,
+      firstDrawOnly: true,
+    })
+    const r2 = await api.offer({ reroll: true })
+    expect(JSON.parse((rerollMock.mock.calls[0][1] as { body: string }).body)).toEqual({ reroll: true })
+    expect(r2.rerollsLeft).toBe(1)
+  })
+
+  it('draw 带 pick 时把 offerId/pickId 发给服务端，并回收最新一批状态', async () => {
+    const fetchMock = mockFetchOnce(200, {
+      result: { ipId: '001', rarity: 'limited', forcedBy: 'pick' },
+      isNew: true,
+      box: { ...EMPTY_BOX, drawnCount: 1, firstDrawDone: true },
+      drawsLeft: 0,
+      offer: { offerId: 'o1', ids: ['000', '001'], opened: ['001'], rerollsLeft: 2, firstDrawOnly: false },
+    })
+    const r = await api.draw({ offerId: 'o1', pickId: '001' })
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body)).toEqual({
+      offerId: 'o1',
+      pickId: '001',
+    })
+    expect(r.result.forcedBy).toBe('pick')
+    expect(r.offer?.opened).toEqual(['001'])
+  })
+
   it('share 返回 drawsLeft', async () => {
     mockFetchOnce(200, { drawsLeft: 1 })
     const r = await api.share()
