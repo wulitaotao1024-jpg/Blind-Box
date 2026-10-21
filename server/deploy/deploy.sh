@@ -14,7 +14,7 @@ DATA_DIR="$APP_DIR/data"
 DB_PATH="$DATA_DIR/api.db"
 SERVICE_NAME=blindgap-api
 PORT=8787
-NGINX_CONF=/etc/nginx/conf.d/blindgap.conf
+NGINX_CONF=/etc/nginx/conf.d/blindbox.conf
 
 NODE_BIN="$(command -v node || true)"
 if [ -z "$NODE_BIN" ]; then
