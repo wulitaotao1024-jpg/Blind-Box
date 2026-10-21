@@ -36,6 +36,8 @@ export default function App() {
   const [last, setLast] = useState<LastResult | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
   const [drawError, setDrawError] = useState<string | null>(null)
+  // 登录来源屏：记录是从哪里点开的登录，登录成功后回跳该屏（而非统一进图鉴墙）
+  const [authReturn, setAuthReturn] = useState<Screen>('landing')
 
   const isAuthed = me !== null
   const user = me?.user ?? null
@@ -85,6 +87,12 @@ export default function App() {
     saveState(next)
   }, [])
 
+  // 进登录屏并记录来源：登录成功后回跳来源屏（首页/抽盒页/图鉴墙各自停留）
+  const goAuth = useCallback((returnTo: Screen) => {
+    setAuthReturn(returnTo)
+    setScreen('auth')
+  }, [])
+
   // F1 抽盒（服务端）：POST /api/draw → 更新 me（box/cards/drawsLeft）→ 进揭晓屏
   const performDraw = useCallback(async () => {
     setDrawError(null)
@@ -106,28 +114,28 @@ export default function App() {
       setScreen('reveal')
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        // 会话失效：退回登录
+        // 会话失效：退回登录（回跳抽盒页，登录后可直接继续开盒）
         setMe(null)
-        setScreen('auth')
+        goAuth('endcard')
         return
       }
       setDrawError('抽盒失败了，请稍后再试')
     }
-  }, [])
+  }, [goAuth])
 
-  // 首抽入口（EndCard 开盒按钮）：未登录 → 进 auth；已登录 → 直接抽（EndCard 自带开盒演出）
+  // 首抽入口（EndCard 开盒按钮）：未登录 → 进 auth（回跳抽盒页，解锁开盒按钮）；已登录 → 直接抽
   const firstDraw = useCallback(() => {
     if (!isAuthed) {
-      setScreen('auth')
+      goAuth('endcard')
       return
     }
     void performDraw()
-  }, [isAuthed, performDraw])
+  }, [isAuthed, performDraw, goAuth])
 
-  // 再抽入口（Reveal 再来一发 / Wall 开盒）：未登录 → 进 auth；已登录 → 演出后抽
+  // 再抽入口（Reveal 再来一发 / Wall 开盒）：未登录 → 进 auth（回跳图鉴墙，解锁开盒按钮）；已登录 → 演出后抽
   const redraw = useCallback(() => {
     if (!isAuthed) {
-      setScreen('auth')
+      goAuth('wall')
       return
     }
     if (drawsLeft <= 0) {
@@ -135,7 +143,7 @@ export default function App() {
       return
     }
     setScreen('opening')
-  }, [isAuthed, drawsLeft])
+  }, [isAuthed, drawsLeft, goAuth])
 
   // F4 分享：复制链接（MVP 通用分享）+ 标记今日分享补给。登录态走服务端，游客态走本地
   const share = useCallback(async () => {
@@ -191,9 +199,9 @@ export default function App() {
         }
       }
       resetGameState() // 清空本地游戏态，避免重复迁移（保留 soundOn）
-      setScreen('wall')
+      setScreen(authReturn) // 回跳来源屏（首页/抽盒页/图鉴墙），而非固定进图鉴墙
     },
-    [],
+    [authReturn],
   )
 
   const handleLogout = useCallback(async () => {
@@ -214,7 +222,7 @@ export default function App() {
   return (
     <div className="stage">
       {showEntry && (
-        <AuthEntry user={user} onLogin={() => setScreen('auth')} onLogout={() => void handleLogout()} />
+        <AuthEntry user={user} onLogin={() => goAuth(screen)} onLogout={() => void handleLogout()} />
       )}
 
       {screen === 'landing' && <Landing onStart={() => setScreen('story')} />}
