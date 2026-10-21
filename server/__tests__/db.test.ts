@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -87,25 +88,38 @@ describe('cards 图鉴', () => {
 })
 
 describe('supply 每日补给', () => {
-  it('首次建档为今日、两项未用', () => {
+  it('首次建档为今日、两项未用、分享余额为 0', () => {
     seedUser()
     const s = db.ensureSupplyToday(database, 'u1', '2026-10-20')
-    expect(s).toEqual({ last_login_date: '2026-10-20', daily_draw_used: 0, share_draw_used: 0 })
+    expect(s).toEqual({
+      last_login_date: '2026-10-20',
+      daily_draw_used: 0,
+      share_draw_used: 0,
+      draws_bonus: 0,
+    })
   })
 
-  it('同日保留已用标记；跨天自动重置（F5 逻辑移交服务端）', () => {
+  it('同日保留已用标记与分享余额；跨天自动重置（F5 逻辑移交服务端）', () => {
     seedUser()
     db.ensureSupplyToday(database, 'u1', '2026-10-20')
     db.updateSupply(database, 'u1', {
       lastLoginDate: '2026-10-20',
       dailyDrawUsed: true,
       shareDrawUsed: true,
+      drawsBonus: 1,
     })
     // 同日再取：不清零
-    expect(db.ensureSupplyToday(database, 'u1', '2026-10-20').daily_draw_used).toBe(1)
-    // 跨天：清零
+    const same = db.ensureSupplyToday(database, 'u1', '2026-10-20')
+    expect(same.daily_draw_used).toBe(1)
+    expect(same.draws_bonus).toBe(1)
+    // 跨天：标记与余额一起清零
     const next = db.ensureSupplyToday(database, 'u1', '2026-10-21')
-    expect(next).toEqual({ last_login_date: '2026-10-21', daily_draw_used: 0, share_draw_used: 0 })
+    expect(next).toEqual({
+      last_login_date: '2026-10-21',
+      daily_draw_used: 0,
+      share_draw_used: 0,
+      draws_bonus: 0,
+    })
   })
 
   it('updateSupply 对新用户也能建档（UPSERT）', () => {
@@ -114,11 +128,13 @@ describe('supply 每日补给', () => {
       lastLoginDate: '2026-10-20',
       dailyDrawUsed: true,
       shareDrawUsed: false,
+      drawsBonus: 0,
     })
     expect(db.ensureSupplyToday(database, 'u2', '2026-10-20')).toEqual({
       last_login_date: '2026-10-20',
       daily_draw_used: 1,
       share_draw_used: 0,
+      draws_bonus: 0,
     })
   })
 })
@@ -171,5 +187,39 @@ describe('sessions 会话', () => {
     db.createSession(database, { token: 'dead', userId: 'u1', createdAt: now, expiresAt: now - 1 })
     expect(db.deleteExpiredSessions(database, now)).toBe(1)
     expect(db.resolveSession(database, 'live', now, SESSION_TTL_MS)).toEqual({ userId: 'u1' })
+  })
+})
+
+// v0.4.2：线上库是旧 schema（supply 无 draws_bonus）。启动时必须能自动补列，且老数据不丢。
+describe('增量迁移 migrate()', () => {
+  it('老库缺 draws_bonus 时自动补列，老数据保留', () => {
+    const legacyDir = mkdtempSync(join(tmpdir(), 'blindgap-legacy-'))
+    const path = join(legacyDir, 'legacy.db')
+    // 用旧 schema 手工建库（模拟线上 v0.4.1 的库）
+    const legacy = new (createRequire(import.meta.url)('node:sqlite').DatabaseSync)(path)
+    legacy.exec(`
+      CREATE TABLE users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, pass_hash TEXT NOT NULL,
+        pass_salt TEXT NOT NULL, created_at INTEGER NOT NULL, last_login_at INTEGER);
+      CREATE TABLE supply (user_id TEXT PRIMARY KEY, last_login_date TEXT NOT NULL DEFAULT '',
+        daily_draw_used INTEGER NOT NULL DEFAULT 0, share_draw_used INTEGER NOT NULL DEFAULT 0);
+      INSERT INTO users VALUES ('u1','legacy','h','s',1,NULL);
+      INSERT INTO supply VALUES ('u1','2026-10-20',1,1);
+    `)
+    legacy.close()
+
+    const upgraded = db.openDatabase(path)
+    const cols = upgraded.prepare('PRAGMA table_info(supply)').all().map((c: any) => c.name)
+    expect(cols).toContain('draws_bonus')
+    const row = upgraded.prepare('SELECT * FROM supply WHERE user_id = $u').get({ u: 'u1' }) as any
+    expect(row.daily_draw_used).toBe(1)
+    expect(row.share_draw_used).toBe(1)
+    expect(row.draws_bonus).toBe(0)
+    upgraded.close()
+
+    // 幂等：再次打开（列已存在）不抛错
+    const again = db.openDatabase(path)
+    expect(again.prepare('SELECT 1 AS x').get()).toBeTruthy()
+    again.close()
+    rmSync(legacyDir, { recursive: true, force: true })
   })
 })

@@ -32,6 +32,8 @@ export interface SupplyRow {
   last_login_date: string
   daily_draw_used: number
   share_draw_used: number
+  /** 分享领到、尚未抽掉的次数（抽一次减一；跨天清零）。见 api.ts 补给模型 */
+  draws_bonus: number
 }
 
 export interface SessionRow {
@@ -69,7 +71,8 @@ CREATE TABLE IF NOT EXISTS supply (
   user_id          TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   last_login_date  TEXT NOT NULL DEFAULT '',
   daily_draw_used  INTEGER NOT NULL DEFAULT 0,
-  share_draw_used  INTEGER NOT NULL DEFAULT 0
+  share_draw_used  INTEGER NOT NULL DEFAULT 0,
+  draws_bonus      INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token      TEXT PRIMARY KEY,
@@ -86,7 +89,22 @@ export function openDatabase(path: string): DatabaseSync {
   db.exec('PRAGMA foreign_keys=ON')
   db.exec('PRAGMA busy_timeout=3000')
   db.exec(SCHEMA)
+  migrate(db)
   return db
+}
+
+// 增量迁移：老库（已上线）缺列时补上。SQLite 的 ADD COLUMN 无 IF NOT EXISTS，重复执行会抛错，
+// 因此逐条 try/catch —— 已存在即跳过，保证每次启动幂等。
+function migrate(db: DatabaseSync): void {
+  const addColumn = (sql: string): void => {
+    try {
+      db.exec(sql)
+    } catch {
+      /* 列已存在 */
+    }
+  }
+  // v0.4.2：分享补给改为「余额」语义（分享 +1 → 抽一次减一），需要独立计数字段
+  addColumn('ALTER TABLE supply ADD COLUMN draws_bonus INTEGER NOT NULL DEFAULT 0')
 }
 
 // —— 用户 ——
@@ -193,19 +211,20 @@ export function hasAnyCards(db: DatabaseSync, userId: string): boolean {
 
 // —— 每日补给（登录 +1 / 分享 +1，每日各 1 次）——
 
-// 跨天自动重置（前端 F5 逻辑移交服务端）：无行则建档，非今日则清零两项已用标记
+// 跨天自动重置（前端 F5 逻辑移交服务端）：无行则建档，非今日则清零「已用标记 + 分享余额」
 export function ensureSupplyToday(db: DatabaseSync, userId: string, today: string): SupplyRow {
   db.prepare(
-    `INSERT INTO supply (user_id, last_login_date, daily_draw_used, share_draw_used)
-     VALUES ($userId, $today, 0, 0)
+    `INSERT INTO supply (user_id, last_login_date, daily_draw_used, share_draw_used, draws_bonus)
+     VALUES ($userId, $today, 0, 0, 0)
      ON CONFLICT(user_id) DO UPDATE SET
        last_login_date = $today,
        daily_draw_used = CASE WHEN supply.last_login_date = $today THEN supply.daily_draw_used ELSE 0 END,
-       share_draw_used = CASE WHEN supply.last_login_date = $today THEN supply.share_draw_used ELSE 0 END`,
+       share_draw_used = CASE WHEN supply.last_login_date = $today THEN supply.share_draw_used ELSE 0 END,
+       draws_bonus = CASE WHEN supply.last_login_date = $today THEN supply.draws_bonus ELSE 0 END`,
   ).run({ userId, today })
   return db
     .prepare(
-      'SELECT last_login_date, daily_draw_used, share_draw_used FROM supply WHERE user_id = $userId',
+      'SELECT last_login_date, daily_draw_used, share_draw_used, draws_bonus FROM supply WHERE user_id = $userId',
     )
     .get({ userId }) as unknown as SupplyRow
 }
@@ -213,18 +232,20 @@ export function ensureSupplyToday(db: DatabaseSync, userId: string, today: strin
 export function updateSupply(
   db: DatabaseSync,
   userId: string,
-  next: { lastLoginDate: string; dailyDrawUsed: boolean; shareDrawUsed: boolean },
+  next: { lastLoginDate: string; dailyDrawUsed: boolean; shareDrawUsed: boolean; drawsBonus: number },
 ): void {
   db.prepare(
-    `INSERT INTO supply (user_id, last_login_date, daily_draw_used, share_draw_used)
-     VALUES ($userId, $lastLoginDate, $dailyDrawUsed, $shareDrawUsed)
+    `INSERT INTO supply (user_id, last_login_date, daily_draw_used, share_draw_used, draws_bonus)
+     VALUES ($userId, $lastLoginDate, $dailyDrawUsed, $shareDrawUsed, $drawsBonus)
      ON CONFLICT(user_id) DO UPDATE SET
-       last_login_date = $lastLoginDate, daily_draw_used = $dailyDrawUsed, share_draw_used = $shareDrawUsed`,
+       last_login_date = $lastLoginDate, daily_draw_used = $dailyDrawUsed,
+       share_draw_used = $shareDrawUsed, draws_bonus = $drawsBonus`,
   ).run({
     userId,
     lastLoginDate: next.lastLoginDate,
     dailyDrawUsed: next.dailyDrawUsed ? 1 : 0,
     shareDrawUsed: next.shareDrawUsed ? 1 : 0,
+    drawsBonus: next.drawsBonus,
   })
 }
 

@@ -8,7 +8,8 @@ export interface Persisted {
   soundOn: boolean
   lastLoginDate: string // YYYY-MM-DD，用于每日登录 +1 抽
   dailyDrawUsed: boolean // 今日登录补给是否已用
-  shareDrawUsed: boolean // 今日分享补给是否已用（每日上限1次）
+  shareDrawUsed: boolean // 今日分享补给是否已领（每日上限1次）
+  drawsBonus: number // 分享领到、尚未抽掉的次数（与服务端同语义）
 }
 
 const DEFAULTS: Persisted = {
@@ -18,6 +19,7 @@ const DEFAULTS: Persisted = {
   lastLoginDate: '',
   dailyDrawUsed: false,
   shareDrawUsed: false,
+  drawsBonus: 0,
 }
 
 export function loadState(): Persisted {

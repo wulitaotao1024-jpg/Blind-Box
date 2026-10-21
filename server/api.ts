@@ -25,6 +25,8 @@ export interface SupplyDto {
   lastLoginDate: string
   dailyDrawUsed: boolean
   shareDrawUsed: boolean
+  /** 分享领到、尚未抽掉的次数 */
+  drawsBonus: number
 }
 
 export interface MeDto {
@@ -45,13 +47,16 @@ export interface ApiOptions {
   rateLimit?: { limit: number; windowMs: number }
 }
 
-const drawsLeftOf = (s: { daily_draw_used: number; share_draw_used: number }): number =>
-  (s.daily_draw_used ? 0 : 1) + (s.share_draw_used ? 0 : 1)
+// 剩余抽数 = 今日登录补给（1 发，未用才有）+ 分享领到但还没抽掉的余额。
+// 分享不再「占掉」一次抽数，而是真给 +1 —— 抽一次才减一，避免「点了分享反而少一发」。
+const drawsLeftOf = (s: { daily_draw_used: number; draws_bonus: number }): number =>
+  (s.daily_draw_used ? 0 : 1) + (s.draws_bonus > 0 ? s.draws_bonus : 0)
 
 const toSupplyDto = (s: db.SupplyRow): SupplyDto => ({
   lastLoginDate: s.last_login_date,
   dailyDrawUsed: !!s.daily_draw_used,
   shareDrawUsed: !!s.share_draw_used,
+  drawsBonus: s.draws_bonus ?? 0,
 })
 
 const toCardsDto = (rows: db.CardRow[]): MeDto['cards'] =>
@@ -187,12 +192,13 @@ export function createApiHandler(options: ApiOptions) {
     }
     const box = db.getBoxState(database, userId) ?? createBoxState()
 
-    // 与前端 performDraw 同序：先扣登录补给，登录已用才扣分享补给
-    const consumeShare = !!supply.daily_draw_used
+    // 与前端同序：先扣今日登录补给，没有才扣分享余额
+    const consumeDaily = !supply.daily_draw_used
     const nextSupply: db.SupplyRow = {
       last_login_date: supply.last_login_date,
       daily_draw_used: 1,
-      share_draw_used: consumeShare ? 1 : supply.share_draw_used,
+      share_draw_used: supply.share_draw_used,
+      draws_bonus: consumeDaily ? supply.draws_bonus : Math.max(0, supply.draws_bonus - 1),
     }
 
     const { result, next } = draw(box, secureRng, pool)
@@ -208,6 +214,7 @@ export function createApiHandler(options: ApiOptions) {
         lastLoginDate: nextSupply.last_login_date,
         dailyDrawUsed: !!nextSupply.daily_draw_used,
         shareDrawUsed: !!nextSupply.share_draw_used,
+        drawsBonus: nextSupply.draws_bonus,
       })
       database.exec('COMMIT')
     } catch (err) {
@@ -223,19 +230,27 @@ export function createApiHandler(options: ApiOptions) {
     })
   }
 
+  // 分享补给：每天一次，点一次「复制链接」就 +1 发（余额 +1，抽一次减一）。
+  // 之前是「标记已用」，结果分享后总次数不增反减 —— 这里改为真加次数。
   const handleShare = (req: IncomingMessage, res: ServerResponse): void => {
     const userId = requireUser(req, res)
     if (!userId) return
     const supply = db.ensureSupplyToday(database, userId, today())
+    let next: db.SupplyRow = supply
     if (!supply.share_draw_used) {
+      next = { ...supply, share_draw_used: 1, draws_bonus: supply.draws_bonus + 1 }
       db.updateSupply(database, userId, {
         lastLoginDate: supply.last_login_date,
         dailyDrawUsed: !!supply.daily_draw_used,
         shareDrawUsed: true,
+        drawsBonus: next.draws_bonus,
       })
     }
-    // 走到这里分享补给必已被标记为今日已用：剩余 = 登录补给
-    sendJson(res, 200, { drawsLeft: supply.daily_draw_used ? 0 : 1 })
+    sendJson(res, 200, {
+      granted: !supply.share_draw_used,
+      drawsLeft: drawsLeftOf(next),
+      supply: toSupplyDto(next),
+    })
   }
 
   const handleMigrate = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -279,6 +294,7 @@ export function createApiHandler(options: ApiOptions) {
       last_login_date: today(),
       daily_draw_used: payloadIsToday && rawSupply.dailyDrawUsed ? 1 : 0,
       share_draw_used: payloadIsToday && rawSupply.shareDrawUsed ? 1 : 0,
+      draws_bonus: 0, // 迁移不继承本地分享余额：以服务端当日分享为准
     }
 
     database.exec('BEGIN IMMEDIATE')
@@ -289,6 +305,7 @@ export function createApiHandler(options: ApiOptions) {
         lastLoginDate: nextSupply.last_login_date,
         dailyDrawUsed: !!nextSupply.daily_draw_used,
         shareDrawUsed: !!nextSupply.share_draw_used,
+        drawsBonus: nextSupply.draws_bonus,
       })
       database.exec('COMMIT')
     } catch (err) {

@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import IpPortrait from '../components/IpPortrait'
 import LorePanel from '../components/LorePanel'
-import ModelViewer3D from '../components/ModelViewer3D'
 import RarityBadge from '../components/RarityBadge'
 import type { IpDef } from '../logic/types'
 
-// P2 开盒揭示屏：闪光 → 顶部缎带蝴蝶结（替代整只礼盒，省纵向空间）→ IP 揭示卡（F3 字段全集 + F8 3D 入口）
+// P2 开盒揭示屏：闪光 → 顶部缎带蝴蝶结（替代整只礼盒，省纵向空间）→ IP 揭示卡（F3 字段全集）
 // 布局：整屏不滚；缎带与底部按钮固定，卡片区吃满剩余高度，内容在卡片内部滚
 export default function Reveal({
   ip,
@@ -20,8 +18,6 @@ export default function Reveal({
   onContinue: () => void
   onDrawAgain: () => void
 }) {
-  const [viewing3d, setViewing3d] = useState(false)
-
   return (
     <div className="reveal">
       <div className="reveal__flash" />
@@ -73,7 +69,6 @@ export default function Reveal({
       <div className="reveal__actions">
         <button className="btn btn--gold" onClick={onContinue}>收入图鉴墙 ›</button>
         <div className="reveal__row">
-          <button className="btn btn--ghost" onClick={() => setViewing3d(true)}>3D 鉴赏</button>
           {drawsLeft > 0 ? (
             <button className="btn btn--ghost" onClick={onDrawAgain}>再来一发（剩 {drawsLeft}）</button>
           ) : (
@@ -81,8 +76,6 @@ export default function Reveal({
           )}
         </div>
       </div>
-
-      {viewing3d && <ModelViewer3D ip={ip} onClose={() => setViewing3d(false)} />}
     </div>
   )
 }

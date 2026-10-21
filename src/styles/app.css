@@ -1193,6 +1193,7 @@
 .reveal__row {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center; /* 去掉 3D 鉴赏后常只剩一颗按钮，居中更平稳 */
   gap: 12px;
 }
 /* 揭晓屏底部次级按钮：暖色玻璃实底（ghost 的细边框+灰字在黄昏背景上不清晰）
@@ -1754,16 +1755,9 @@
   font-size: 24px;
   font-weight: 900;
   letter-spacing: 0.1em;
-  margin-bottom: 8px;
+  /* 副标题已按需求移除，标题与 tab 之间补回呼吸感 */
+  margin-bottom: 22px;
 }
-.auth__sub {
-  text-align: center;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-dim);
-  margin-bottom: 20px;
-}
-.auth__hl { color: var(--gold); font-weight: 800; }
 .auth__tabs {
   display: flex;
   gap: 8px;
@@ -1863,6 +1857,9 @@
   border-radius: 999px;
   font-size: 14px;
   font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  max-width: calc(100vw - 32px); /* 长文案不撑破小屏 */
   color: var(--ink);
   background: rgba(22, 18, 32, 0.92);
   border: 1px solid var(--line);

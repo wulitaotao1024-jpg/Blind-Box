@@ -8,12 +8,14 @@ import Wall from './screens/Wall'
 import Auth from './screens/Auth'
 import AuthEntry from './components/AuthEntry'
 import { IPS } from './data/ips'
+import { buildShareText } from './data/share'
 import { loadState, resetGameState, saveState, todayStr } from './logic/storage'
 import type { Persisted } from './logic/storage'
 import { track } from './logic/track'
 import type { DrawResult } from './logic/types'
 import { api, ApiError } from './lib/apiClient'
 import type { CardDto, MeDto } from './lib/apiClient'
+import { copyText } from './lib/clipboard'
 
 // 首页动线状态机（PRD 6.3）：landing → story → endcard → (opening →) reveal → wall
 // 新增 auth：登录/注册屏（游客可浏览，抽盒/再抽需登录）
@@ -36,6 +38,7 @@ export default function App() {
   const [last, setLast] = useState<LastResult | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
   const [drawError, setDrawError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
   // 登录来源屏：记录是从哪里点开的登录，登录成功后回跳该屏（而非统一进图鉴墙）
   const [authReturn, setAuthReturn] = useState<Screen>('landing')
 
@@ -64,7 +67,7 @@ export default function App() {
     const today = todayStr()
     setPersisted((p) => {
       if (p.lastLoginDate === today) return p
-      const next = { ...p, lastLoginDate: today, dailyDrawUsed: false, shareDrawUsed: false }
+      const next = { ...p, lastLoginDate: today, dailyDrawUsed: false, shareDrawUsed: false, drawsBonus: 0 }
       saveState(next)
       return next
     })
@@ -80,7 +83,7 @@ export default function App() {
   )
   const drawsLeft = isAuthed
     ? me!.drawsLeft
-    : (persisted.dailyDrawUsed ? 0 : 1) + (persisted.shareDrawUsed ? 0 : 1)
+    : (persisted.dailyDrawUsed ? 0 : 1) + persisted.drawsBonus
 
   const update = useCallback((next: Persisted) => {
     setPersisted(next)
@@ -145,31 +148,38 @@ export default function App() {
     setScreen('opening')
   }, [isAuthed, drawsLeft, goAuth])
 
-  // F4 分享：复制链接（MVP 通用分享）+ 标记今日分享补给。登录态走服务端，游客态走本地
+  // F4 分享：复制「推广文案 + 链接」到剪贴板（微信里粘贴即可，不依赖任何平台 SDK），
+  // 点击即标记今日分享补给 +1 发。登录态走服务端，游客态走本地
   const share = useCallback(async () => {
-    track('share_click', { channel: 'clipboard' })
-    const url = window.location.href
-    if (navigator.share) {
-      navigator
-        .share({ title: '盒隙 BLINDGAP', text: '主理人开了个盒隙，我刚开出狠货。来拼我的同款宇宙 👉', url })
-        .catch(() => undefined)
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).catch(() => undefined)
-    }
+    track('share_click', { channel: 'copy-link' })
+    const url = window.location.origin + '/'
+    const copied = await copyText(buildShareText(url))
     setShareCopied(true)
-    setTimeout(() => setShareCopied(false), 2000)
+    setTimeout(() => setShareCopied(false), 2400)
+
+    let gained = false
     if (isAuthed) {
       try {
         const resp = await api.share()
-        setMe((prev) =>
-          prev ? { ...prev, drawsLeft: resp.drawsLeft, supply: { ...prev.supply, shareDrawUsed: true } } : prev,
-        )
+        gained = resp.granted
+        setMe((prev) => (prev ? { ...prev, drawsLeft: resp.drawsLeft, supply: resp.supply } : prev))
       } catch {
         /* 分享补给标记失败不阻断体验 */
       }
     } else if (!persisted.shareDrawUsed) {
-      update({ ...persisted, shareDrawUsed: true })
+      update({ ...persisted, shareDrawUsed: true, drawsBonus: persisted.drawsBonus + 1 })
+      gained = true
     }
+    setToast(
+      copied
+        ? gained
+          ? '已复制 · 补给 +1 发 ✦'
+          : '已复制 · 今日补给已领过'
+        : gained
+          ? '复制失败 · 补给 +1 发已到账'
+          : '复制失败 · 请手动复制地址',
+    )
+    setTimeout(() => setToast(null), 2600)
   }, [isAuthed, persisted, update])
 
   // 登录/注册成功：落库会话 → 尝试迁移本地存量（幂等）→ 清空本地游戏态 → 进图鉴墙
@@ -267,6 +277,7 @@ export default function App() {
       {screen === 'auth' && <Auth onSkip={() => setScreen('landing')} onAuthed={handleAuthed} />}
 
       {drawError && <div className="toast toast--error" onClick={() => setDrawError(null)}>{drawError}</div>}
+      {!drawError && toast && <div className="toast" onClick={() => setToast(null)}>{toast}</div>}
     </div>
   )
 }

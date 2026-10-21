@@ -86,7 +86,6 @@ export default function Auth({
         </div>
 
         <h1 className="auth__title">进入第六大道</h1>
-        <p className="auth__sub">登录后，你抽到的每一只都<span className="auth__hl">跨设备云端保存</span>，下次登录自动加载。</p>
 
         <div className="auth__tabs" role="tablist">
           <button

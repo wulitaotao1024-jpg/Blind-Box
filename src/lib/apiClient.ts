@@ -18,6 +18,8 @@ export interface SupplyDto {
   lastLoginDate: string
   dailyDrawUsed: boolean
   shareDrawUsed: boolean
+  /** 分享领到、尚未抽掉的次数（服务端余额，抽一次减一） */
+  drawsBonus: number
 }
 
 export interface MeDto {
@@ -36,7 +38,10 @@ export interface DrawDto {
 }
 
 export interface ShareDto {
+  /** 本次是否真的加了一发（每日仅一次） */
+  granted: boolean
   drawsLeft: number
+  supply: SupplyDto
 }
 
 export interface MigrateInput {

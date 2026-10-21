@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import IpPortrait from '../components/IpPortrait'
 import LorePanel from '../components/LorePanel'
-import ModelViewer3D from '../components/ModelViewer3D'
 import RarityBadge from '../components/RarityBadge'
 import { IPS } from '../data/ips'
 import { FOOTER_LINE } from '../data/subtitles'
@@ -28,7 +27,6 @@ export default function Wall({
   onReplay: () => void
 }) {
   const [detail, setDetail] = useState<IpDef | null>(null)
-  const [viewing3d, setViewing3d] = useState<IpDef | null>(null)
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
   const p = progress(collected, IPS)
 
@@ -120,8 +118,8 @@ export default function Wall({
           >
             {locked ? '登录开盒' : drawsLeft > 0 ? `开 盒（${drawsLeft} 发）` : '今日已用完'}
           </button>
-          <button className="btn btn--ghost" onClick={onShare}>
-            {shareCopied ? '链接已复制 ✓' : '分享 +1发'}
+          <button className="btn btn--ghost" onClick={onShare} title="复制一段推广文案 + 站点链接，粘贴给朋友即可，同时补给 +1 发">
+            {shareCopied ? '已复制 ✓' : '复制链接 +1发'}
           </button>
           <button className="btn btn--ghost" onClick={onReplay}>重看故事</button>
           <button className="btn btn--ghost" onClick={syncToPet} title="把已抽到角色推送到桌面宠">
@@ -161,13 +159,10 @@ export default function Wall({
             </div>
           </article>
           <div className="reveal__row detail__actions">
-            <button className="btn btn--ghost" onClick={() => setViewing3d(detail)}>3D 鉴赏</button>
             <button className="btn btn--gold" onClick={() => setDetail(null)}>关闭</button>
           </div>
         </div>
       )}
-
-      {viewing3d && <ModelViewer3D ip={viewing3d} onClose={() => setViewing3d(null)} />}
     </div>
   )
 }

@@ -145,7 +145,7 @@ afterEach(async () => {
 })
 
 describe('注册/登录/登出 全链路', () => {
-  it('注册即发会话，me 返回默认状态（2 发补给、空图鉴）', async () => {
+  it('注册即发会话，me 返回默认状态（1 发登录补给、空图鉴）', async () => {
     const c = new Client()
     const r = await c.register(CRED.username, CRED.password)
     expect(r.status).toBe(201)
@@ -158,7 +158,7 @@ describe('注册/登录/登出 全链路', () => {
     const me = await c.call('/api/me')
     expect(me.status).toBe(200)
     expect(me.json.user.username).toBe('taotao')
-    expect(me.json.drawsLeft).toBe(2)
+    expect(me.json.drawsLeft).toBe(1) // 初始只有登录补给；分享补给要点「复制链接」才 +1
     expect(me.json.box).toEqual({
       drawnCount: 0,
       pitySmall: 0,
@@ -171,6 +171,7 @@ describe('注册/登录/登出 全链路', () => {
       lastLoginDate: todayStr(),
       dailyDrawUsed: false,
       shareDrawUsed: false,
+      drawsBonus: 0,
     })
   })
 
@@ -243,7 +244,7 @@ describe('未登录访问控制', () => {
 })
 
 describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
-  it('首抽必得 000 引导款；补给先扣登录后扣分享；抽干后 409', async () => {
+  it('首抽必得 000 引导款；登录补给扣完即 409，分享 +1 后可继续抽', async () => {
     const c = new Client()
     await c.register(CRED.username, CRED.password)
 
@@ -253,7 +254,16 @@ describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
     expect(first.json.isNew).toBe(true)
     expect(first.json.box.firstDrawDone).toBe(true)
     expect(first.json.box.drawnCount).toBe(1)
-    expect(first.json.drawsLeft).toBe(1) // 登录补给已扣，剩分享补给
+    expect(first.json.drawsLeft).toBe(0) // 今日仅 1 发登录补给；分享补给需点分享才到账
+
+    const blocked = await c.draw()
+    expect(blocked.status).toBe(409)
+    expect(blocked.json.error).toContain('补给已用完')
+
+    // 分享 +1：真加一发（余额），而不是把某个标记置为已用
+    const shared = await c.call('/api/share', { method: 'POST' })
+    expect(shared.json.granted).toBe(true)
+    expect(shared.json.drawsLeft).toBe(1)
 
     const second = await c.draw()
     expect(second.status).toBe(200)
@@ -263,7 +273,6 @@ describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
 
     const third = await c.draw()
     expect(third.status).toBe(409)
-    expect(third.json.error).toContain('补给已用完')
 
     const me = await c.call('/api/me')
     expect(me.json.box.drawnCount).toBe(2)
@@ -275,12 +284,12 @@ describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
     expect(me.json.drawsLeft).toBe(0)
     expect(me.json.supply.dailyDrawUsed).toBe(true)
     expect(me.json.supply.shareDrawUsed).toBe(true)
+    expect(me.json.supply.drawsBonus).toBe(0) // 分享领的那发已被第二抽用掉
   })
 
-  it('跨天自动恢复 2 发补给（服务端 F5 重置）', async () => {
+  it('跨天自动恢复补给（服务端 F5 重置）', async () => {
     const c = new Client()
     await c.register(CRED.username, CRED.password)
-    await c.draw()
     await c.draw()
     expect((await c.draw()).status).toBe(409)
 
@@ -289,26 +298,32 @@ describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
       d: '2020-01-01',
     })
     const me = await c.call('/api/me')
-    expect(me.json.drawsLeft).toBe(2)
+    expect(me.json.drawsLeft).toBe(1) // 新的一天：登录补给恢复，分享补给需重新分享
     expect(me.json.supply.dailyDrawUsed).toBe(false)
+    expect(me.json.supply.drawsBonus).toBe(0)
   })
 })
 
 describe('分享补给 /api/share', () => {
-  it('分享 +1 发且当日幂等', async () => {
+  it('分享真 +1 发（不占次数），当日仅一次', async () => {
     const c = new Client()
     await c.register(CRED.username, CRED.password)
 
+    // 1 发登录补给 + 分享 +1 = 2 发
     const s1 = await c.call('/api/share', { method: 'POST' })
     expect(s1.status).toBe(200)
-    expect(s1.json.drawsLeft).toBe(1) // 分享补给用掉，登录补给还在
+    expect(s1.json.granted).toBe(true)
+    expect(s1.json.drawsLeft).toBe(2)
+    expect(s1.json.supply.shareDrawUsed).toBe(true)
+    expect(s1.json.supply.drawsBonus).toBe(1)
 
-    // 抽一发扣登录补给 → 0
-    expect((await c.draw()).json.drawsLeft).toBe(0)
+    expect((await c.draw()).json.drawsLeft).toBe(1) // 扣登录补给，分享余额还在
+    expect((await c.draw()).json.drawsLeft).toBe(0) // 再扣分享余额
     expect((await c.draw()).status).toBe(409)
 
-    // 重复分享不反弹
+    // 重复分享不再加发
     const s2 = await c.call('/api/share', { method: 'POST' })
+    expect(s2.json.granted).toBe(false)
     expect(s2.json.drawsLeft).toBe(0)
   })
 })
@@ -331,12 +346,13 @@ describe('存量迁移 /api/migrate', () => {
     expect(r.json.box.drawnCount).toBe(5)
     expect(r.json.box.pityHard).toBe(12)
     expect(r.json.cards.map((x: any) => x.ipId).sort()).toEqual(['001', '005', '008'])
-    expect(r.json.drawsLeft).toBe(1) // 当日登录补给已用的标记被保留
+    expect(r.json.drawsLeft).toBe(0) // 当日登录补给已用的标记被保留 → 需分享才能再抽
 
     const me = await c.call('/api/me')
     expect(me.json.box.pitySmall).toBe(3)
     expect(me.json.cards).toHaveLength(3)
-    // 迁移后还能继续抽（扣分享补给）
+    // 迁移后分享一次即可继续抽（分享 +1 真到账）
+    await c.call('/api/share', { method: 'POST' })
     expect((await c.draw()).json.drawsLeft).toBe(0)
   })
 
@@ -372,7 +388,7 @@ describe('存量迁移 /api/migrate', () => {
         supply: { lastLoginDate: '2020-01-01', dailyDrawUsed: true, shareDrawUsed: true },
       },
     })
-    expect(r.json.drawsLeft).toBe(2)
+    expect(r.json.drawsLeft).toBe(1) // 跨天视为满补给：只剩今日登录那 1 发
     expect(r.json.supply.lastLoginDate).toBe(todayStr())
   })
 })
