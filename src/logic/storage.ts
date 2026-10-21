@@ -2,7 +2,6 @@ import type { BoxState } from './types'
 
 // localStorage 适配层：MVP 本地持久化；接后端时替换此文件实现同接口即可
 const KEY = 'blindgap:v1'
-
 export interface Persisted {
   box: BoxState
   collected: string[]
@@ -40,9 +39,12 @@ export function saveState(state: Persisted): void {
   }
 }
 
-export function todayStr(d = new Date()): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+// 登录后清空本地游戏态（box/collected/supply）：数据已迁移到服务端。
+// 保留 soundOn 设备偏好，不清空。
+export function resetGameState(): void {
+  const cur = loadState()
+  saveState({ ...DEFAULTS, soundOn: cur.soundOn })
 }
+
+// 日期工具移至 dates.ts（无 DOM 依赖，服务端 SSR 共用）；此处保持既有导出不变
+export { todayStr } from './dates'

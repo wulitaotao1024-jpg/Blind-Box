@@ -27,11 +27,13 @@ const CONFETTI = [
 // 次数用完时不再假装开盒（放完动画却被甩进图鉴墙）：金色按钮直接改道图鉴墙
 export default function EndCard({
   drawsLeft,
+  locked,
   onOpen,
   onWall,
   onReplay,
 }: {
   drawsLeft: number
+  locked?: boolean
   onOpen: () => void
   onWall: () => void
   onReplay: () => void
@@ -47,7 +49,18 @@ export default function EndCard({
     window.setTimeout(() => setFlash(true), 560)
     window.setTimeout(onOpen, 980)
   }
-  const primary = () => (noDraw ? onWall() : open())
+  // 未登录：点击直接进登录屏（不播开盒演出，避免「盒子开了却跳登录」的割裂感）
+  const primary = () => {
+    if (locked) {
+      onOpen()
+      return
+    }
+    if (noDraw) {
+      onWall()
+      return
+    }
+    open()
+  }
 
   return (
     <div className="endcard">
@@ -83,7 +96,7 @@ export default function EndCard({
       <p className="endcard__line">{END_CARD_LINE}</p>
       <div className="endcard__actions">
         <button className="btn btn--gold" onClick={primary} disabled={opening}>
-          {noDraw ? '进入我的图鉴墙 ›' : '开 盒'}
+          {locked ? '登录后开盒 ›' : noDraw ? '进入我的图鉴墙 ›' : '开 盒'}
         </button>
         <span className="endcard__draws">
           {drawsLeft > 0 ? `今日补给 ${drawsLeft} 发可用` : '今日补给已用完 · 分享或明天再来'}

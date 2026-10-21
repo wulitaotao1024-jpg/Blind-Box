@@ -14,6 +14,7 @@ export default function Wall({
   collected,
   drawsLeft,
   shareCopied,
+  locked,
   onDraw,
   onShare,
   onReplay,
@@ -21,6 +22,7 @@ export default function Wall({
   collected: ReadonlySet<string>
   drawsLeft: number
   shareCopied: boolean
+  locked?: boolean
   onDraw: () => void
   onShare: () => void
   onReplay: () => void
@@ -107,13 +109,16 @@ export default function Wall({
         </div>
 
         <div className="wall__actions">
+          {locked && (
+            <p className="wall__login-cta">登录后，你抽到的每一只都会云端保存、跨设备同步 ✦</p>
+          )}
           <button
             className="btn btn--gold"
             onClick={onDraw}
-            disabled={drawsLeft <= 0}
-            title={drawsLeft <= 0 ? '今日补给已用完，分享 +1 发或明天再来' : undefined}
+            disabled={!locked && drawsLeft <= 0}
+            title={!locked && drawsLeft <= 0 ? '今日补给已用完，分享 +1 发或明天再来' : undefined}
           >
-            {drawsLeft > 0 ? `开 盒（${drawsLeft} 发）` : '今日已用完'}
+            {locked ? '登录开盒' : drawsLeft > 0 ? `开 盒（${drawsLeft} 发）` : '今日已用完'}
           </button>
           <button className="btn btn--ghost" onClick={onShare}>
             {shareCopied ? '链接已复制 ✓' : '分享 +1发'}

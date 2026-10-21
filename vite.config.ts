@@ -8,9 +8,17 @@ export default defineConfig({
   server: {
     host: true,
     port: 5188,
+    // 本地联调：前端 dev server 把 /api 反代到本地 Node 后端（同机 127.0.0.1:8787）
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
   },
 })
