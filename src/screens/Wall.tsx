@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AllGallery from '../components/AllGallery'
 import IpPortrait from '../components/IpPortrait'
 import LorePanel from '../components/LorePanel'
 import RarityBadge from '../components/RarityBadge'
@@ -27,6 +28,7 @@ export default function Wall({
   onReplay: () => void
 }) {
   const [detail, setDetail] = useState<IpDef | null>(null)
+  const [gallery, setGallery] = useState(false)
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
   const p = progress(collected, IPS)
 
@@ -76,6 +78,17 @@ export default function Wall({
                 已点亮 <b>{p.collected}</b> / {p.total}
                 {complete ? ' —— 街区全员归来！' : left > 0 ? `，还差 ${left} 个兄弟就能端盒。` : ''}
               </p>
+              {/* 全部图鉴：右侧弹出全季总览，只看图不进详情 */}
+              <button
+                className="wall__all"
+                onClick={() => {
+                  track('collection_all_open', { collected: p.collected })
+                  setGallery(true)
+                }}
+                title="看看这一季的全套图鉴（只看图，点不开详情）"
+              >
+                全部图鉴 ›
+              </button>
               {complete && <span className="wall__complete">端盒达成 · 彩蛋入口</span>}
             </div>
           </div>
@@ -163,6 +176,8 @@ export default function Wall({
           </div>
         </div>
       )}
+
+      {gallery && <AllGallery collected={collected} onClose={() => setGallery(false)} />}
     </div>
   )
 }

@@ -10,6 +10,7 @@ export type TrackEvent =
   | 'share_click'
   | 'share_callback'
   | 'collection_view'
+  | 'collection_all_open'
   | 'ip_3d_open'
   | 'ip_3d_rotate'
   | 'ip_3d_zoom'

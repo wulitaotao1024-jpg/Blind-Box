@@ -1270,7 +1270,8 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap; /* 「全部图鉴」入口在窄屏可换到下一行，不挤压进度文案 */
+  gap: 8px 10px;
 }
 .wall__progress-text {
   color: rgba(255, 240, 224, 0.9);
@@ -1502,6 +1503,160 @@
   color: var(--ink-dim);
   font-size: 13px;
   letter-spacing: 0.16em;
+}
+
+/* ========== 全部图鉴（图鉴墙进度行右侧入口 → 全季总览弹窗：只看图，点不开详情） ========== */
+/* 进度行里的小入口：与 13px 进度文字同排，克制不抢戏 */
+.wall__all {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  color: var(--gold);
+  background: rgba(255, 214, 150, 0.08);
+  border: 1px solid rgba(255, 214, 150, 0.32);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.wall__all:hover { background: rgba(255, 214, 150, 0.16); }
+.wall__all:active { transform: scale(0.96); }
+
+.gallery {
+  position: fixed;
+  inset: 0;
+  z-index: 60; /* 压住详情弹层(50)，让位给 toast(80) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(14, 10, 22, 0.82);
+  backdrop-filter: blur(8px) saturate(1.05);
+  -webkit-backdrop-filter: blur(8px) saturate(1.05);
+  animation: fade-in 0.2s ease both;
+}
+.gallery__panel {
+  display: flex;
+  flex-direction: column;
+  width: min(880px, 100%);
+  max-height: 88vh;
+  max-height: 88dvh; /* 移动端地址栏不吃掉底部说明 */
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #241a3e 0%, #2c1f49 46%, #35234f 100%);
+  border: 1px solid rgba(255, 214, 150, 0.22);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: gallery-in 0.26s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+@keyframes gallery-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.gallery__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.gallery__titles { flex: 1; min-width: 0; }
+.gallery__title { font-size: 19px; font-weight: 900; letter-spacing: 0.12em; color: var(--ink); }
+.gallery__sub { margin-top: 4px; font-size: 12px; letter-spacing: 0.06em; color: var(--ink-dim); }
+.gallery__close {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 15px;
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+}
+.gallery__close:active { transform: scale(0.94); }
+.gallery__grid {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 14px 18px 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 10px;
+}
+.gallery__cell {
+  position: relative;
+  margin: 0;
+  min-height: 0; /* 网格项默认 min-height:auto 会被立绘撑高，导致格子高矮不齐 */
+  aspect-ratio: 1 / 1.18;
+  overflow: hidden;
+  border-radius: 12px;
+  background: radial-gradient(120% 90% at 50% 10%, var(--bg-3), var(--bg-2));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+/* 立绘脱离文档流：格子高度只由 aspect-ratio 决定，21 格才排得齐 */
+.gallery__cell .portrait {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+}
+/* 已收录描一圈金边；未收录整体压暗一档 —— 图都能看到，自己手里的那几只一眼跳出来 */
+.gallery__cell--owned {
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 150, 0.55), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.gallery__cell--locked .portrait {
+  filter: saturate(0.55) brightness(0.76);
+}
+.gallery__cell--locked .portrait__empty-num,
+.gallery__cell--locked .portrait__empty-tag {
+  opacity: 0.7;
+}
+/* 素材未补齐的角色：占位卡里的大号编号与右下角「№」重复，只留小字标签 */
+.gallery__cell .portrait__empty-num { display: none; }
+.gallery__hit {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #2a1a08;
+  background: linear-gradient(180deg, #ffe6b0, #f5bf6a);
+  box-shadow: 0 2px 8px rgba(245, 191, 106, 0.35);
+}
+.gallery__num {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 8px 5px;
+  text-align: right;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 240, 224, 0.72);
+  background: linear-gradient(180deg, transparent, rgba(10, 8, 16, 0.72));
+}
+.gallery__foot {
+  flex: none;
+  padding: 10px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  text-align: center;
+}
+@media (min-width: 700px) {
+  /* 桌面放宽格子：21 只排 3 行、画幅更大，不至于挤成一条小图带 */
+  .gallery__grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+}
+@media (max-width: 420px) {
+  /* 手机上一屏尽量多摊几只：4 列，21 只约 6 行，少滚一点 */
+  .gallery__grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; padding: 12px 14px 4px; }
+  .gallery__head { padding: 14px 14px 10px; }
+  .gallery__foot { padding: 8px 14px calc(10px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ========== 详情弹层（图鉴墙点入）· 卡片直接复用揭晓屏 reveal__card，两处完全一致 ========== */
