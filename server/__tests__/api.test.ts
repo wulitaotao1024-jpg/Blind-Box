@@ -8,7 +8,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createApiHandler } from '../api'
 import { openDatabase } from '../db'
 import { todayStr } from '../../src/logic/dates'
+import { IPS } from '../../src/data/ips'
 import type { IpDef } from '../../src/logic/types'
+
+// 服务端默认使用真实 IP 池；断言首抽结果应是「在售（ready）」角色之一
+const READY_IDS = IPS.filter((p) => p.status === 'ready').map((p) => p.id)
 
 // —— 测试基建：临时库 + 临时端口 + 手工 cookie jar ——
 
@@ -244,13 +248,15 @@ describe('未登录访问控制', () => {
 })
 
 describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
-  it('首抽必得 000 引导款；登录补给扣完即 409，分享 +1 后可继续抽', async () => {
+  const POOL_IDS = READY_IDS
+
+  it('首抽不再强制老皮：正常随机出池内角色；登录补给扣完即 409，分享 +1 后可继续抽', async () => {
     const c = new Client()
     await c.register(CRED.username, CRED.password)
 
     const first = await c.draw()
     expect(first.status).toBe(200)
-    expect(first.json.result).toEqual({ ipId: '000', rarity: 'guide', forcedBy: 'guide' })
+    expect(POOL_IDS).toContain(first.json.result.ipId)
     expect(first.json.isNew).toBe(true)
     expect(first.json.box.firstDrawDone).toBe(true)
     expect(first.json.box.drawnCount).toBe(1)
@@ -268,7 +274,7 @@ describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
     const second = await c.draw()
     expect(second.status).toBe(200)
     expect(second.json.isNew).toBe(true)
-    expect(second.json.result.ipId).not.toBe('000') // 非首抽不会再出引导款
+    expect(POOL_IDS).toContain(second.json.result.ipId)
     expect(second.json.drawsLeft).toBe(0)
 
     const third = await c.draw()
@@ -276,11 +282,8 @@ describe('抽盒 /api/draw（服务端抽卡 + 保底计数）', () => {
 
     const me = await c.call('/api/me')
     expect(me.json.box.drawnCount).toBe(2)
-    expect(me.json.cards).toHaveLength(2)
-    expect(me.json.cards.map((x: any) => x.ipId).sort()).toEqual(
-      ['000', second.json.result.ipId].sort(),
-    )
-    expect(me.json.cards.every((x: any) => x.count === 1)).toBe(true)
+    expect(me.json.cards.reduce((n: number, x: any) => n + x.count, 0)).toBe(2)
+    expect(me.json.cards.every((x: any) => POOL_IDS.includes(x.ipId))).toBe(true)
     expect(me.json.drawsLeft).toBe(0)
     expect(me.json.supply.dailyDrawUsed).toBe(true)
     expect(me.json.supply.shareDrawUsed).toBe(true)
@@ -448,20 +451,17 @@ describe('限流与路由', () => {
 })
 
 describe('赌盒六选一 /api/offer + 指定拆 /api/draw', () => {
-  it('取一批 6 个盒子：只公开系列，不泄露内容', async () => {
+  it('取一批 8 个盒子：完全不可见（连系列都不下发），不泄露内容', async () => {
     const c = new Client()
     await c.register(CRED.username, CRED.password)
 
     const o1 = await c.call('/api/offer', { method: 'POST', body: {} })
     expect(o1.status).toBe(200)
-    expect(o1.json.boxes).toHaveLength(6)
-    // 没拆的盒子不能带 ipId —— 这是「赌盒」的核心：前端拿不到答案
+    expect(o1.json.boxes).toHaveLength(8)
+    // 没拆的盒子既不能有 ipId，也不能有 rarity —— 真·盲盒，前端拿不到任何答案
     expect(o1.json.boxes.every((b: { ipId?: string }) => b.ipId === undefined)).toBe(true)
-    expect(o1.json.boxes.every((b: { rarity: string }) => typeof b.rarity === 'string')).toBe(true)
+    expect(o1.json.boxes.every((b: { rarity?: string }) => b.rarity === undefined)).toBe(true)
     expect(o1.json.boxes.every((b: { opened: boolean }) => b.opened === false)).toBe(true)
-    expect(o1.json.firstDrawOnly).toBe(true)
-    // 首抽整批都是引导款
-    expect(o1.json.boxes.every((b: { rarity: string }) => b.rarity === 'guide')).toBe(true)
     expect(o1.json.rerollsLeft).toBe(2)
 
     const o2 = await c.call('/api/offer', { method: 'POST', body: { reroll: true } })
@@ -476,25 +476,24 @@ describe('赌盒六选一 /api/offer + 指定拆 /api/draw', () => {
     expect(o4.json.code).toBe('NO_REROLL')
   })
 
-  it('首抽：随便挑哪个盒子，拆出来都是引导款 000', async () => {
+  it('随便挑哪个盒子，拆出来是该盒真身；其余盒子依旧不可见', async () => {
     const c = new Client()
     await c.register(CRED.username, CRED.password)
     const offer = (await c.call('/api/offer', { method: 'POST', body: {} })).json
 
     const ok = await c.call('/api/draw', { method: 'POST', body: { offerId: offer.offerId, pickIndex: 4 } })
     expect(ok.status).toBe(200)
-    expect(ok.json.result.ipId).toBe('000')
     expect(ok.json.result.forcedBy).toBe('pick')
-    // 拆开后那个盒子才亮出真身
+    // 拆开后那个盒子才亮出真身（带 ipId + rarity）
     expect(ok.json.offer.boxes[4].opened).toBe(true)
-    expect(ok.json.offer.boxes[4].ipId).toBe('000')
-    // 其余盒子依旧不可见
-    expect(ok.json.offer.boxes.filter((b: { ipId?: string }) => b.ipId === undefined)).toHaveLength(5)
-    // 也不能白拿 6 张 000：剩下几个已经换回常规批（常规批永远不会是引导款）
+    expect(ok.json.offer.boxes[4].ipId).toBe(ok.json.result.ipId)
+    expect(typeof ok.json.offer.boxes[4].rarity).toBe('string')
+    // 其余 7 个盒子依旧不可见
+    expect(ok.json.offer.boxes.filter((b: { ipId?: string }) => b.ipId === undefined)).toHaveLength(7)
     expect(
       ok.json.offer.boxes
         .filter((b: { opened: boolean }) => !b.opened)
-        .every((b: { rarity: string }) => b.rarity !== 'guide'),
+        .every((b: { rarity?: string }) => b.rarity === undefined),
     ).toBe(true)
   })
 

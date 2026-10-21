@@ -71,33 +71,25 @@ describe('apiClient', () => {
     expect(r.box.drawnCount).toBe(1)
   })
 
-  it('offer 取一批 6 只；reroll 随请求体发出', async () => {
+  it('offer 取一批 8 只；内容不可见（无 rarity/ipId）；reroll 随请求体发出', async () => {
     const fetchMock = mockFetchOnce(200, {
       offerId: 'o1',
-      boxes: [
-        { rarity: 'street', opened: false },
-        { rarity: 'street', opened: false },
-        { rarity: 'limited', opened: false },
-        { rarity: 'heat', opened: false },
-        { rarity: 'street', opened: false },
-        { rarity: 'guide', opened: false },
-      ],
+      // 本批 8 只封着的盒子：服务端连 rarity 都不下发（真·盲盒）
+      boxes: Array.from({ length: 8 }, () => ({ opened: false })),
       rerollsLeft: 2,
-      firstDrawOnly: true,
     })
     const r = await api.offer()
     expect(fetchMock).toHaveBeenCalledWith('/api/offer', expect.objectContaining({ method: 'POST' }))
     expect(JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body)).toEqual({})
-    expect(r.boxes).toHaveLength(6)
-    // 内容不可见：DTO 里不能出现 ipId（只有已拆的盒子才会带）
+    expect(r.boxes).toHaveLength(8)
+    // 内容不可见：DTO 里不能出现 ipId（只有已拆的盒子才会带 rarity/ipId）
     expect(r.boxes.every((b) => b.ipId === undefined)).toBe(true)
-    expect(r.firstDrawOnly).toBe(true)
+    expect(r.boxes.every((b) => b.rarity === undefined)).toBe(true)
 
     const rerollMock = mockFetchOnce(200, {
       offerId: 'o2',
-      boxes: Array.from({ length: 6 }, () => ({ rarity: 'street', opened: false })),
+      boxes: Array.from({ length: 8 }, () => ({ opened: false })),
       rerollsLeft: 1,
-      firstDrawOnly: true,
     })
     const r2 = await api.offer({ reroll: true })
     expect(JSON.parse((rerollMock.mock.calls[0][1] as { body: string }).body)).toEqual({ reroll: true })
@@ -112,9 +104,9 @@ describe('apiClient', () => {
       drawsLeft: 0,
       offer: {
         offerId: 'o1',
-        boxes: [{ rarity: 'street', opened: true, ipId: '001' }, { rarity: 'limited', opened: false }],
+        // 已拆的盒子回传 ipId+rarity；未拆的盒子什么线索都不给
+        boxes: [{ rarity: 'street', opened: true, ipId: '001' }, { opened: false }],
         rerollsLeft: 2,
-        firstDrawOnly: false,
       },
     })
     const r = await api.draw({ offerId: 'o1', pickIndex: 0 })

@@ -19,12 +19,10 @@ const fakeGhost: IpDef = {
 const fullPool: IpDef[] = [...readyPool(IPS), fakeStreet, fakeGhost]
 
 describe('抽盒经济 boxReducer', () => {
-  it('首抽必得 000 幼年老皮（引导款）', () => {
+  it('首抽不再强制引导款：走正常随机，仍从 ready 池抽取且 firstDrawDone 置位', () => {
     const s0 = createBoxState()
-    const { result, next } = draw(s0, always(0.99), IPS)
-    expect(result.ipId).toBe('000')
-    expect(result.rarity).toBe('guide')
-    expect(result.forcedBy).toBe('guide')
+    const { result, next } = draw(s0, always(0.9), fullPool)
+    expect(fullPool.some((p) => p.id === result.ipId)).toBe(true)
     expect(next.firstDrawDone).toBe(true)
     expect(next.drawnCount).toBe(1)
   })

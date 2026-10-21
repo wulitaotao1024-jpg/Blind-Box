@@ -30,12 +30,11 @@ export interface MeDto {
   drawsLeft: number
 }
 
-/** 明牌六选一：服务端发的一批盒子（6 只编号 + 已拆记录 + 换批额度） */
+/** 赌盒六选一：服务端发的一批盒子（内容完全不可见，连系列都不下发） */
 export interface OfferBoxDto {
-  /** 这个盒子属于哪个系列（档位）：玩家能看到的唯一线索 */
-  rarity: Rarity
   opened: boolean
-  /** 已经拆开的盒子才回传里面是谁 */
+  /** 只有已拆开的盒子才回传：里面是谁 + 它的档位，用于回看自己拆了哪只 */
+  rarity?: Rarity
   ipId?: string
 }
 
@@ -43,8 +42,6 @@ export interface OfferDto {
   offerId: string
   boxes: OfferBoxDto[]
   rerollsLeft: number
-  /** 首抽：整批都是引导款（挑哪只都是 №000） */
-  firstDrawOnly: boolean
 }
 
 export interface DrawDto {
@@ -137,7 +134,7 @@ export const api = {
     return req<MeDto>('/api/me')
   },
 
-  /** 明牌六选一：取当批 6 只；reroll=true 整批换掉（每天 2 次，且拆过就不能换） */
+  /** 赌盒六选一：取当批 8 只封着的盒子；reroll=true 整批换掉（每天 2 次，且拆过就不能换） */
   async offer(input?: { reroll?: boolean }): Promise<OfferDto> {
     return req<OfferDto>('/api/offer', { method: 'POST', body: JSON.stringify(input ?? {}) })
   },

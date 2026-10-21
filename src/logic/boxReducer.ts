@@ -1,4 +1,4 @@
-import { PITY, RARITY_RATE } from './types'
+import { GUIDE_CHANCE, PITY, RARITY_RATE } from './types'
 import type { BoxState, DrawResult, IpDef, Rarity } from './types'
 
 export const createBoxState = (): BoxState => ({
@@ -60,7 +60,8 @@ const hasReadyRarity = (pool: IpDef[], rarity: Rarity) =>
 export function nextStateAfter(state: BoxState, actual: Rarity): BoxState {
   return {
     drawnCount: state.drawnCount + 1,
-    pitySmall: actual === 'street' ? state.pitySmall + 1 : 0,
+    // 引导款（老皮）视为「普通路面级」彩蛋：不清任何保底计数，只是 +1 累计
+    pitySmall: actual === 'street' || actual === 'guide' ? state.pitySmall + 1 : 0,
     pityBig: actual === 'heat' || actual === 'ghost' ? 0 : state.pityBig + 1,
     pityHard: actual === 'ghost' ? 0 : state.pityHard + 1,
     firstDrawDone: true,
@@ -72,6 +73,7 @@ export function nextStateAfter(state: BoxState, actual: Rarity): BoxState {
  * 保底优先级：幽灵硬保底 > 大保底(狠货+) > 小保底(限定+)。
  * 注意：幽灵硬保底仅在幽灵 IP 在售时强制兑现；未在售时计数照常累积，
  * 幽灵 IP 上线后的第一次开盒立即触发（不对未上线期间过度补偿）。
+ * 引导款（老皮）不再强制首抽，而是以约 GUIDE_CHANCE 概率作为偶发彩蛋掉落（见下方）。
  * 服务端实现时应保持同一语义（PRD F1）。
  */
 export function draw(
@@ -79,19 +81,14 @@ export function draw(
   rng: () => number,
   pool: IpDef[],
 ): { result: DrawResult; next: BoxState } {
-  // —— 首抽：必得引导款 000（PRD F6）——
-  if (!state.firstDrawDone) {
-    const guide = pool.find((p) => p.rarity === 'guide' && p.status === 'ready') ?? pool[0]
+  const ready = pool.filter((p) => p.status === 'ready')
+  const guide = ready.find((p) => p.rarity === 'guide')
+
+  // 引导款偶发彩蛋：每抽约 1% 概率直接落老皮（不在四档公示概率内），让图鉴里的 000 仍可被集齐
+  if (guide && rng() < GUIDE_CHANCE) {
     return {
       result: { ipId: guide.id, rarity: guide.rarity, forcedBy: 'guide' },
-      next: {
-        ...state,
-        drawnCount: state.drawnCount + 1,
-        pitySmall: state.pitySmall + 1,
-        pityBig: state.pityBig + 1,
-        pityHard: state.pityHard + 1,
-        firstDrawDone: true,
-      },
+      next: nextStateAfter(state, guide.rarity),
     }
   }
 

@@ -17,8 +17,8 @@ import { api, ApiError } from './lib/apiClient'
 import type { CardDto, MeDto, OfferDto } from './lib/apiClient'
 import { copyText } from './lib/clipboard'
 
-// 首页动线状态机（PRD 6.3）：landing → story → endcard(开盒台：6 个封着的盒子) → opening → reveal → wall
-// 末帧本身就是开盒台：一落地就摊 6 个盒子，不再「点一下直接出结果」
+// 首页动线状态机（PRD 6.3）：landing → story → endcard(开盒台：8 个封着的盒子) → opening → reveal → wall
+// 末帧本身就是开盒台：一落地就摊 8 个盒子，不再「点一下直接出结果」
 type Screen = 'landing' | 'story' | 'endcard' | 'opening' | 'reveal' | 'wall' | 'auth'
 
 interface LastResult extends DrawResult {
@@ -106,7 +106,7 @@ export default function App() {
     window.setTimeout(() => setToast(null), 2600)
   }, [])
 
-  // 取一批 6 个封着的盒子（服务端只回「系列」，不回内容）
+  // 取一批 8 个封着的盒子（服务端连「系列」都不回，纯盲盒）
   const loadOffer = useCallback(
     async (opts?: { reroll?: boolean }) => {
       if (opts?.reroll) setRerolling(true)
@@ -116,7 +116,6 @@ export default function App() {
         setOffer(o)
         track(opts?.reroll ? 'offer_reroll' : 'offer_view', {
           rerollsLeft: o.rerollsLeft,
-          firstDrawOnly: o.firstDrawOnly,
         })
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {

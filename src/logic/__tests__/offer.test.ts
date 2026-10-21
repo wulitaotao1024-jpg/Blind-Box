@@ -43,10 +43,22 @@ describe('赌盒 buildOffer（内容不可见，只定系列）', () => {
     expect(ids.every((id) => pool.find((p) => p.id === id)?.status === 'ready')).toBe(true)
   })
 
-  it('首抽：整批 6 个都是引导款（挑哪只都是老皮）', () => {
+  it('首抽不再强制引导款：正常随机出在售角色，不再整批 000', () => {
     const ids = buildOffer(createBoxState(), pool, fixed(0.5))
     expect(ids).toHaveLength(OFFER_SIZE)
-    expect(ids.every((id) => id === '000')).toBe(true)
+    expect(ids.every((id) => pool.find((p) => p.id === id)?.status === 'ready')).toBe(true)
+    expect(ids.every((id) => id === '000')).toBe(false)
+  })
+
+  it('引导款（老皮）作为偶发彩蛋：约 1% 概率单独落一只，不进整批强制', () => {
+    // 反复抽取，确认 guide 不会被「整批」塞满（首抽也只偶发）
+    let guideBatches = 0
+    for (let s = 0; s < 200; s++) {
+      const ids = buildOffer(createBoxState(), pool, fixed(0.99))
+      if (ids.every((id) => id === '000')) guideBatches++
+    }
+    // fixed(0.99) 永不触发 guide 偶发，所以 200 批里 0 批整批 000
+    expect(guideBatches).toBe(0)
   })
 
   it('小保底到期：整批都是限定及以上（赌哪只都兑现保底）', () => {
@@ -89,9 +101,9 @@ describe('赌盒 buildOffer（内容不可见，只定系列）', () => {
     expect(rollOfferRarity(0.99)).toBe('street')
   })
 
-  it('拆完 6 个即视为这一批用尽', () => {
-    expect(isOfferExhausted(6, 2)).toBe(false)
-    expect(isOfferExhausted(6, 6)).toBe(true)
+  it('拆完 8 个即视为这一批用尽', () => {
+    expect(isOfferExhausted(OFFER_SIZE, 2)).toBe(false)
+    expect(isOfferExhausted(OFFER_SIZE, OFFER_SIZE)).toBe(true)
   })
 })
 

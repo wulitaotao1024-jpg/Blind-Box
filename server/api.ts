@@ -39,12 +39,11 @@ export interface MeDto {
   drawsLeft: number
 }
 
-/** 赌盒六选一的一批盒子（F1 交互）：内容不可见，只公开「系列」 */
+/** 赌盒六选一的一批盒子（F1 交互）：内容完全不可见，连系列都不公开 */
 export interface OfferBoxDto {
-  /** 这个盒子属于哪个系列（档位）：玩家能看到的唯一线索 */
-  rarity: Rarity
   opened: boolean
-  /** 已经拆开的盒子才回传里面是谁，用于回看自己拆了哪只 */
+  /** 只有已经拆开的盒子才回传里面是谁 + 它的档位，用于回看自己拆了哪只 */
+  rarity?: Rarity
   ipId?: string
 }
 
@@ -53,8 +52,6 @@ export interface OfferDto {
   offerId: string
   boxes: OfferBoxDto[]
   rerollsLeft: number
-  /** 首抽未完成时整批都是引导款（挑哪只都是 №000） */
-  firstDrawOnly: boolean
 }
 
 export interface ApiOptions {
@@ -206,7 +203,7 @@ export function createApiHandler(options: ApiOptions) {
   const noDrawsError = () =>
     new HttpError(409, '今日补给已用完，明天登录 +1，或分享再 +1', 'NO_DRAWS')
 
-  // 明牌六选一：取当批 6 只（没有/已拆完就新开一批；reroll=true 换新一批并扣一次换批额度）
+  // 赌盒六选一：取当批 8 只封着的盒子（没有/已拆完就新开一批；reroll=true 换新一批并扣一次换批额度）
   const handleOffer = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const userId = requireUser(req, res)
     if (!userId) return
@@ -253,19 +250,17 @@ export function createApiHandler(options: ApiOptions) {
     sendJson(res, 200, toOfferDto(current, box))
   }
 
+  // 内容完全不可见：未拆的盒子只回 opened:false，连「系列」都不下发（真·盲盒，前端拿不到答案）
   const toOfferDto = (row: db.OfferRow, box: BoxState): OfferDto => ({
     offerId: row.id,
     boxes: row.ids.map((id, i) => {
       const ip = pool.find((p) => p.id === id)
       const opened = row.opened.includes(i)
-      return {
-        rarity: ip?.rarity ?? 'street',
-        opened,
-        ...(opened ? { ipId: id } : {}),
-      }
+      return opened && ip
+        ? { rarity: ip.rarity, opened: true, ipId: id }
+        : { opened: false }
     }),
     rerollsLeft: row.rerolls_left,
-    firstDrawOnly: !box.firstDrawDone,
   })
 
   const handleDraw = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -295,10 +290,7 @@ export function createApiHandler(options: ApiOptions) {
       if (!ip || ip.status !== 'ready') {
         throw new HttpError(400, '这只还没上架', 'PICK_NOT_READY')
       }
-      // 首抽：整批都是引导款，这里再兜一层（保住 F6 首抽必得 000）
-      if (!box.firstDrawDone && ip.rarity !== 'guide') {
-        throw new HttpError(409, '第一只先领走老皮吧（新手必得）', 'FIRST_DRAW_GUIDE_ONLY')
-      }
+      // 不再强制「首抽必是老皮」：玩家从这一批里随便赌哪一只都行（老皮改由偶发彩蛋掉落）
 
       const next = nextStateAfter(box, ip.rarity)
 

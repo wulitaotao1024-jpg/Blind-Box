@@ -48,7 +48,7 @@ export interface OfferRow {
   id: string
   user_id: string
   day: string
-  ids: string[] // 本批 6 个盒子里各装谁（只服务端可见，客户端拿到的是「系列」）
+  ids: string[] // 本批 8 个盒子里各装谁（只服务端可见，客户端拿不到任何内容线索）
   opened: number[] // 本批已拆开的下标（用下标而非编号：首抽整批都是 000，编号会重样）
   rerolls_left: number
   created_at: number
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS supply (
   share_draw_used  INTEGER NOT NULL DEFAULT 0,
   draws_bonus      INTEGER NOT NULL DEFAULT 0
 );
--- 明牌六选一：当批 6 只（F1 交互）。ids/opened 存 JSON 数组，按 (user_id, day) 唯一。
+-- 明牌六选一：当批 8 只（F1 交互）。ids/opened 存 JSON 数组，按 (user_id, day) 唯一。
 CREATE TABLE IF NOT EXISTS offers (
   id           TEXT PRIMARY KEY,
   user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -2069,223 +2069,91 @@
   color: rgba(255, 244, 228, 0.76);
 }
 
-/* —— 6 个盒子 —— */
+/* —— 8 个盒子（4 × 2） —— */
 .table__grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 2px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 4px;
 }
+/* 只留盒子本体：去掉外边框 / 背景 /「封着」字 */
 .table__cell {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 0; /* 网格项默认 min-height:auto 会被里面的绝对定位内容撑高 */
-  aspect-ratio: 1 / 1.16;
-  overflow: hidden;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 246, 224, 0.14);
-  background:
-    radial-gradient(120% 90% at 50% 8%, rgba(255, 255, 255, 0.08), transparent 62%),
-    linear-gradient(180deg, rgba(28, 20, 46, 0.72), rgba(16, 11, 26, 0.86));
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  aspect-ratio: 1 / 1.12;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s ease, filter 0.18s ease;
 }
-.table__cell:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 246, 224, 0.3);
-}
-/* 悬停/钉住的那一格：金边高亮，和下面预览条对上眼 */
-.table__cell.is-peek {
-  border-color: rgba(255, 214, 150, 0.72);
-  box-shadow: 0 0 0 1px rgba(255, 214, 150, 0.32), 0 12px 26px rgba(0, 0, 0, 0.42);
-}
-.table__cell.is-dim { opacity: 0.5; cursor: default; }
+.table__cell:hover { transform: translateY(-4px); }
+.table__cell.is-dim { opacity: 0.45; cursor: default; filter: saturate(0.7); }
 .table__cell.is-dim:hover { transform: none; }
-.table__cell.is-opened { cursor: default; border-color: rgba(255, 214, 150, 0.3); }
+.table__cell.is-opened { cursor: default; }
 .table__cell.is-opened:hover { transform: none; }
 
-/* 盒盖：封条。拆过之后掀开 —— 一眼看出哪个已经开过 */
-.table__lid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 4;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border-radius: 13px 13px 3px 3px;
-  background: linear-gradient(180deg, #ffe1a6 0%, #f0bd5e 58%, #d79c3c 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  transform-origin: top center;
-  transition: transform 0.5s cubic-bezier(0.34, 1.26, 0.64, 1), opacity 0.4s ease;
-}
-.table__lid i {
-  font-style: normal;
-  font-size: 9.5px;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  color: #4a3305;
-}
-.table__cell.is-opened .table__lid {
-  transform: rotateX(-74deg);
-  opacity: 0.4;
-  box-shadow: none;
-}
-/* 封着的礼物盒：固定尺寸 + 缩放，6 格才排得齐 */
+/* 封着的礼物盒：随格子缩放（不再固定 120px），只露出盒子本身 */
 .table__box {
-  position: absolute;
-  inset: 22px 0 0;
-  display: grid;
-  place-items: center;
+  width: 86%;
+  max-width: 132px;
 }
-.table__box .mystery-box { transform: scale(0.6); }
-.table__cell .portrait { position: absolute; inset: 22px 0 0; border-radius: 0; }
-
-/* 已拆的戳 */
-.table__stamp {
-  position: absolute;
-  z-index: 5;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-9deg);
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  white-space: nowrap;
-  color: #ffe6b4;
-  border: 1.5px dashed rgba(255, 214, 150, 0.75);
-  background: rgba(30, 18, 8, 0.55);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-}
-
-/* —— 系列标签（唯一公开的线索） —— */
-.table__series {
-  position: absolute;
-  z-index: 6;
-  left: 50%;
-  bottom: 6px;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid currentColor;
-  background: rgba(12, 8, 20, 0.62);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.table__series em {
-  font-style: normal;
-  font-size: 7.5px;
-  letter-spacing: 0.16em;
-  opacity: 0.72;
-}
-.table__series--guide { color: #ffd76a; }
-.table__series--street { color: #d3dae4; }
-.table__series--limited { color: #5fe8d4; }
-.table__series--heat { color: #ff8f5c; }
-.table__series--ghost { color: #c49aff; }
-
-/* —— 系列预览条：悬停/钉住时换成这一系列的可能名单 —— */
-.peek {
+.table__box .mystery-box {
   width: 100%;
-  min-height: 96px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px 10px;
-  border-radius: 14px;
-  border: 1px dashed rgba(255, 246, 224, 0.16);
-  background: rgba(12, 8, 20, 0.3);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  height: auto;
+  aspect-ratio: 5 / 4;
 }
-.peek.is-on {
-  border-style: solid;
-  border-color: rgba(255, 214, 150, 0.32);
-  background: rgba(12, 8, 20, 0.52);
-}
-.peek__hint {
-  margin: 0;
-  font-size: 11.5px;
-  letter-spacing: 0.08em;
-  color: rgba(255, 244, 228, 0.6);
-}
-.peek__hint span { color: #ffe0a8; }
-.peek__title {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: #ffeccd;
-}
-.peek__title em {
-  font-style: normal;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  opacity: 0.7;
-}
-.peek__title span {
-  font-weight: 500;
-  color: rgba(255, 244, 228, 0.66);
-}
-.peek__row {
-  display: flex;
-  gap: 9px;
-  /* safe center：装得下就居中，装不下（系列人多）退回左对齐可横滑，不会把左边裁掉 */
-  justify-content: safe center;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch;
-}
-.peek__item {
-  flex: 0 0 auto;
-  width: 46px;
-  margin: 0;
+
+/* 已拆：盒子被打开的样子 —— 露出真身（立绘），盒盖斜倚在一角，一眼看出「这个被拆开了」 */
+.table__reveal {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  width: 100%;
 }
-.peek__thumb {
+.table__reveal-box {
   position: relative;
-  width: 46px;
-  height: 54px;
-  overflow: hidden;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 246, 224, 0.16);
-  background: rgba(255, 255, 255, 0.05);
+  width: 84%;
+  max-width: 116px;
 }
-.peek__thumb .portrait { position: absolute; inset: 0; border-radius: 0; }
-.peek__item figcaption {
-  max-width: 46px;
-  font-size: 8.5px;
-  line-height: 1.25;
-  color: rgba(255, 244, 228, 0.82);
-  text-align: center;
+.table__reveal-portrait {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 12px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
-.peek__item figcaption i {
-  display: block;
+.table__reveal-portrait .portrait { border-radius: 12px; }
+/* 斜倚的盒盖：拆开后遗落在一角 */
+.table__reveal-lid {
+  position: absolute;
+  top: -8px;
+  left: -7px;
+  width: 52%;
+  height: 22%;
+  z-index: 3;
+  border-radius: 9px 9px 5px 5px;
+  background: linear-gradient(135deg, #ffd76a 0%, #ffb15e 45%, #ff8f5e 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: rotate(-22deg);
+  transform-origin: bottom center;
+}
+.table__reveal-meta {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff6e8;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+.table__reveal-meta i {
   font-style: normal;
-  font-size: 7.5px;
-  letter-spacing: 0.08em;
-  opacity: 0.55;
+  font-size: 9px;
+  opacity: 0.62;
+  margin-left: 4px;
+  letter-spacing: 0.1em;
 }
 
 /* —— 底部 —— */
@@ -2315,35 +2183,24 @@
   .table__grid { gap: 8px; }
   .table__cell { aspect-ratio: 1 / 1.18; }
   .table__title { font-size: 18px; letter-spacing: 0.12em; }
-  .table__series { font-size: 9.5px; padding: 2px 7px; }
-  .table__series em { display: none; }
+  .table__reveal-meta { font-size: 9.5px; }
   .table .btn { padding: 11px 18px; letter-spacing: 0.08em; }
 }
 @media (min-width: 768px) {
-  .table__inner { width: min(820px, 100%); }
-  /* 宽屏把 6 个盒子摊成一排（像货架），比 3×2 的大块头更像「六个盒子摆在你面前」 */
-  .table__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  .table__inner { width: min(760px, 100%); }
+  /* 桌面仍是 4 × 2，盒子略大一点更像「八个盒子摆在你面前」 */
+  .table__grid { gap: 16px; }
   .table__cell { aspect-ratio: 1 / 1.1; }
-  .table__series { font-size: 10.5px; }
-  .table__series em { display: none; }
 }
-/* 横屏矮屏（手机横放）：6 个盒子摊成一行，一屏放得下 + 底部按钮 */
+/* 横屏矮屏（手机横放）：4 个一行、两行，一屏放得下 + 底部按钮 */
 @media (orientation: landscape) and (max-height: 560px) {
-  /* 宽度必须扣掉左右 18px padding，否则 96vw 会比可用宽度宽一点点 → 横向溢出 */
   .table { padding-top: 14px; }
-  .table__inner { width: min(860px, calc(100vw - 40px)); gap: 6px; }
-  .table__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-  .table__cell { aspect-ratio: 1 / 1.02; }
+  .table__inner { width: min(900px, calc(100vw - 40px)); gap: 6px; }
+  .table__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .table__cell { aspect-ratio: 1 / 1.04; }
   .table__title { font-size: 15px; letter-spacing: 0.1em; }
   .table__sub { font-size: 10.5px; line-height: 1.4; }
-  .table__lid { height: 18px; }
-  .table__lid i { font-size: 8.5px; }
-  .table__box { inset: 18px 0 0; }
-  .table__box .mystery-box { transform: scale(0.52); }
-  .table__cell .portrait { inset: 18px 0 0; }
-  .peek { min-height: 56px; padding: 5px 10px; gap: 4px; }
-  .peek__thumb { width: 28px; height: 32px; }
-  .peek__item { width: 28px; }
-  .peek__item figcaption { font-size: 7.5px; }
+  .table__box { width: 74%; }
+  .table__reveal-box { width: 72%; }
   .table .btn { padding: 8px 14px; font-size: 12.5px; }
 }

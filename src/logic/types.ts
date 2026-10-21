@@ -39,11 +39,15 @@ export interface DrawResult {
   forcedBy: 'guide' | 'none' | 'small' | 'big' | 'hard' | 'pick'
 }
 
-// 每批明牌盒子数量与「换一批」上限（F1 六选一交互）
-export const OFFER_SIZE = 6
-// 换一批上限：明牌六选一已经大幅提高入手好卡的概率，再给无限换批会把保底体系冲掉，
-// 因此每批限 2 次（一批最多看 3 组）。想调松/调紧只改这一个常量（服务端同步生效）。
+// 每批盲盒盒子数量与「换一批」上限（F1 交互）
+export const OFFER_SIZE = 8
+// 换一批上限：每批限 2 次（一批最多看 3 组）。想调松/调紧只改这一个常量（服务端同步生效）。
 export const OFFER_REROLL_LIMIT = 2
+
+// 引导款（老皮·幼年 000）不在公示四档概率内，作为「偶发彩蛋」掉落：
+// 每盒约 1% 概率直接是老皮。这样「首抽不必是老皮」的同时，老皮仍可被抽到、图鉴可集齐。
+// 必须严格 < 0.01 —— 单测用 always(0.01) 触发 ghost 重映射，不能误伤。
+export const GUIDE_CHANCE = 0.01
 
 // 保底数值（PRD F1 参考值，已拍板）
 export const PITY = {
