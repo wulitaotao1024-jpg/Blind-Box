@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>蝴蝶结预览 — 盒隙 BLINDGAP</title>
+<link rel="stylesheet" href="src/styles/tokens.css" />
+<link rel="stylesheet" href="src/styles/app.css" />
+<style>
+  body { margin: 0; }
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    background:
+      radial-gradient(58% 40% at 50% 66%, rgba(255, 220, 160, 0.28), transparent 70%),
+      radial-gradient(90% 60% at 50% 112%, rgba(255, 150, 100, 0.22), transparent 66%),
+      linear-gradient(180deg, #241a3e 0%, #3a2557 32%, #6b3a63 60%, #a05a68 82%, #d97a56 100%);
+  }
+  .stage__label { color: rgba(255, 231, 188, 0.75); font-size: 12px; letter-spacing: 0.3em; }
+  /* 卡片示意：仅用于衬托蝴蝶结在揭晓卡上方的实际观感 */
+  .stage__card {
+    width: min(360px, 88vw);
+    border-radius: 18px;
+    background: rgba(30, 18, 44, 0.55);
+    border: 1px solid rgba(255, 249, 234, 0.14);
+    padding: 16px 20px 20px;
+    color: #f5e9d6;
+    font-size: 13px;
+  }
+  .stage__card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .stage__num { font-size: 20px; font-weight: 800; letter-spacing: 0.08em; }
+  .stage__badge {
+    border: 1px solid rgba(255, 214, 140, 0.7);
+    color: #ffd68c;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+  }
+  .stage__portrait {
+    height: 150px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(255, 179, 122, 0.25), rgba(232, 96, 154, 0.18));
+    border: 1px dashed rgba(255, 249, 234, 0.25);
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <span class="stage__label">揭晓屏顶部装饰 — 新样式（对照图2）</span>
+
+  <!-- 与 Reveal.tsx 完全一致的结构 -->
+  <div class="reveal__ribbon" aria-hidden="true">
+    <span class="reveal__ribbon-tail reveal__ribbon-tail--l"></span>
+    <span class="reveal__ribbon-tail reveal__ribbon-tail--r"></span>
+    <span class="reveal__ribbon-bow">
+      <i class="reveal__ribbon-loop reveal__ribbon-loop--l"></i>
+      <i class="reveal__ribbon-loop reveal__ribbon-loop--r"></i>
+      <i class="reveal__ribbon-knot"></i>
+    </span>
+    <span class="reveal__sparkle reveal__sparkle--1">✦</span>
+    <span class="reveal__sparkle reveal__sparkle--2">✦</span>
+    <span class="reveal__sparkle reveal__sparkle--3">✦</span>
+  </div>
+
+  <div class="stage__card">
+    <div class="stage__card-row">
+      <span class="stage__num">№ 020</span>
+      <span class="stage__badge">路面款 STREET</span>
+    </div>
+    <div class="stage__portrait"></div>
+  </div>
+
+  <span class="stage__label">放大 2x 查看细节</span>
+  <div style="transform: scale(2); transform-origin: top center; margin-bottom: 68px;">
+    <div class="reveal__ribbon" aria-hidden="true">
+      <span class="reveal__ribbon-tail reveal__ribbon-tail--l"></span>
+      <span class="reveal__ribbon-tail reveal__ribbon-tail--r"></span>
+      <span class="reveal__ribbon-bow">
+        <i class="reveal__ribbon-loop reveal__ribbon-loop--l"></i>
+        <i class="reveal__ribbon-loop reveal__ribbon-loop--r"></i>
+        <i class="reveal__ribbon-knot"></i>
+      </span>
+      <span class="reveal__sparkle reveal__sparkle--1">✦</span>
+      <span class="reveal__sparkle reveal__sparkle--2">✦</span>
+      <span class="reveal__sparkle reveal__sparkle--3">✦</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

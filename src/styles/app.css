@@ -1776,6 +1776,15 @@
   background: rgba(255, 90, 90, 0.1);
   border: 1px solid rgba(255, 90, 90, 0.25);
 }
+.auth__error-action {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold);
+  text-decoration: underline;
+}
 .auth__foot {
   margin-top: 16px;
   text-align: center;

@@ -15,11 +15,13 @@ export default function Auth({
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setErrorCode(null)
     const name = username.trim()
     if (name.length < 2 || name.length > 20) {
       setError('用户名需 2-20 位（字母、数字、下划线或中文）')
@@ -41,6 +43,7 @@ export default function Auth({
       onAuthed(me)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '网络开小差了，请稍后再试')
+      setErrorCode(err instanceof ApiError ? err.code ?? null : null)
     } finally {
       setLoading(false)
     }
@@ -49,6 +52,7 @@ export default function Auth({
   const switchMode = (next: 'login' | 'register') => {
     setMode(next)
     setError(null)
+    setErrorCode(null)
   }
 
   return (
@@ -129,7 +133,21 @@ export default function Auth({
             />
           </label>
 
-          {error && <p className="auth__error" role="alert">{error}</p>}
+          {error && (
+            <p className="auth__error" role="alert">
+              {error}
+              {errorCode === 'NO_USER' && (
+                <button type="button" className="auth__error-action" onClick={() => switchMode('register')}>
+                  去注册 ›
+                </button>
+              )}
+              {errorCode === 'USERNAME_TAKEN' && (
+                <button type="button" className="auth__error-action" onClick={() => switchMode('login')}>
+                  去登录 ›
+                </button>
+              )}
+            </p>
+          )}
 
           <button className="btn btn--gold auth__submit" type="submit" disabled={loading}>
             {loading ? '处理中…' : mode === 'register' ? '注册并进入' : '登录'}

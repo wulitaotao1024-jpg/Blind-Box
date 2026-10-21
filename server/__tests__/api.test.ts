@@ -174,26 +174,30 @@ describe('注册/登录/登出 全链路', () => {
     })
   })
 
-  it('重名注册 409；用户名统一小写后判重（Tao 与 tao 同号）', async () => {
+  it('重名注册 409（USERNAME_TAKEN）；用户名统一小写后判重（Tao 与 tao 同号）', async () => {
     const a = new Client()
     expect((await a.register('taotao')).status).toBe(201)
     const b = new Client()
-    expect((await b.register('TAOTAO')).status).toBe(409)
+    const dup = await b.register('TAOTAO')
+    expect(dup.status).toBe(409)
+    expect(dup.json.code).toBe('USERNAME_TAKEN')
   })
 
-  it('登录：正确密码发会话；错误密码与不存在用户统一 401 同一文案', async () => {
+  it('登录：正确密码发会话；错误密码与不存在用户分别返回 BAD_CREDENTIAL / NO_USER', async () => {
     const a = new Client()
     await a.register(CRED.username, CRED.password)
 
     const wrong = new Client()
     const r1 = await wrong.login(CRED.username, 'wrong-password')
     expect(r1.status).toBe(401)
-    expect(r1.json.error).toBe('用户名或密码错误')
+    expect(r1.json.code).toBe('BAD_CREDENTIAL')
+    expect(r1.json.error).toBe('登录失败，密码不正确')
 
     const nobody = new Client()
     const r2 = await nobody.login('no-such-user', '12345678')
     expect(r2.status).toBe(401)
-    expect(r2.json.error).toBe('用户名或密码错误')
+    expect(r2.json.code).toBe('NO_USER')
+    expect(r2.json.error).toBe('该账号尚未注册，请先注册')
 
     const ok = new Client()
     const r3 = await ok.login(CRED.username, CRED.password)

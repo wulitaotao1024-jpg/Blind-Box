@@ -4,12 +4,15 @@ import { SESSION_COOKIE, SESSION_TTL_MS } from './auth'
 // 手写 HTTP 小工具（零依赖）：JSON 体读取、响应、cookie、限流桶。
 
 export class HttpError extends Error {
+  code?: string
   constructor(
     public status: number,
     message: string,
+    code?: string,
   ) {
     super(message)
     this.name = 'HttpError'
+    this.code = code
   }
 }
 

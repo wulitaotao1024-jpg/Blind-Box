@@ -120,7 +120,7 @@ export function createApiHandler(options: ApiOptions) {
     try {
       db.insertUser(database, { id, username, passHash: hash, passSalt: salt, createdAt: now() })
     } catch (err) {
-      if (isUniqueViolation(err)) throw new HttpError(409, '用户名已被注册')
+      if (isUniqueViolation(err)) throw new HttpError(409, '用户名已被注册，去登录试试', 'USERNAME_TAKEN')
       throw err
     }
     setSessionCookie(res, issueSession(id))
@@ -135,16 +135,16 @@ export function createApiHandler(options: ApiOptions) {
       typeof body.username === 'string' ? auth.normalizeUsername(body.username) : null
     const password = typeof body.password === 'string' ? body.password : null
     if (!username || !password) {
-      throw new HttpError(401, '用户名或密码错误')
+      throw new HttpError(400, '请输入用户名和密码')
     }
     const user = db.findUserByUsername(database, username)
     if (!user) {
       // 无此用户：仍对假哈希验一次，让两种失败耗时接近（防用户名枚举）
       auth.verifyPasswordUniform(password, undefined)
-      throw new HttpError(401, '用户名或密码错误')
+      throw new HttpError(401, '该账号尚未注册，请先注册', 'NO_USER')
     }
     if (!auth.verifyPassword(password, user.pass_salt, user.pass_hash)) {
-      throw new HttpError(401, '用户名或密码错误')
+      throw new HttpError(401, '登录失败，密码不正确', 'BAD_CREDENTIAL')
     }
     db.touchLastLogin(database, user.id, now())
     setSessionCookie(res, issueSession(user.id))
@@ -333,7 +333,11 @@ export function createApiHandler(options: ApiOptions) {
       }
     } catch (err) {
       if (err instanceof HttpError) {
-        sendJson(res, err.status, { error: err.message })
+        sendJson(
+          res,
+          err.status,
+          err.code ? { error: err.message, code: err.code } : { error: err.message },
+        )
         return
       }
       console.error('[api] 未处理异常:', err)

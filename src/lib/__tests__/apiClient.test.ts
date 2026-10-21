@@ -112,12 +112,31 @@ describe('apiClient', () => {
     expect(err).toMatchObject({ status: 401, message: '未登录' })
   })
 
-  it('注册重名返回 409', async () => {
-    mockFetchOnce(409, { error: '用户名已被注册' })
-    await expect(api.register('tom', '12345678')).rejects.toMatchObject({
-      status: 409,
-      message: '用户名已被注册',
-    })
+  it('注册重名返回 409（USERNAME_TAKEN）', async () => {
+    mockFetchOnce(409, { error: '用户名已被注册，去登录试试', code: 'USERNAME_TAKEN' })
+    const err = await api.register('tom', '12345678').then(
+      () => null,
+      (e) => e,
+    )
+    expect(err).toMatchObject({ status: 409, message: '用户名已被注册，去登录试试', code: 'USERNAME_TAKEN' })
+  })
+
+  it('登录未注册账号返回 401（NO_USER）', async () => {
+    mockFetchOnce(401, { error: '该账号尚未注册，请先注册', code: 'NO_USER' })
+    const err = await api.login('ghost', '12345678').then(
+      () => null,
+      (e) => e,
+    )
+    expect(err).toMatchObject({ status: 401, code: 'NO_USER', message: '该账号尚未注册，请先注册' })
+  })
+
+  it('登录密码错误返回 401（BAD_CREDENTIAL）', async () => {
+    mockFetchOnce(401, { error: '登录失败，密码不正确', code: 'BAD_CREDENTIAL' })
+    const err = await api.login('tom', 'wrong').then(
+      () => null,
+      (e) => e,
+    )
+    expect(err).toMatchObject({ status: 401, code: 'BAD_CREDENTIAL' })
   })
 
   it('限流返回 429', async () => {

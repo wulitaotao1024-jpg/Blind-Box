@@ -55,10 +55,12 @@ export interface MigrateDto {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  code?: string
+  constructor(status: number, message: string, code?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
 }
 
@@ -79,7 +81,11 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
       (body && typeof body === 'object' && 'error' in body
         ? String((body as { error: unknown }).error)
         : '') || `请求失败（${res.status}）`
-    throw new ApiError(res.status, msg)
+    const code =
+      body && typeof body === 'object' && 'code' in body
+        ? String((body as { code: unknown }).code)
+        : undefined
+    throw new ApiError(res.status, msg, code)
   }
   return body as T
 }
