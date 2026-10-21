@@ -6,7 +6,7 @@ import { IPS } from '../src/data/ips'
 import { isOfferExhausted, buildOffer } from '../src/logic/offer'
 import { OFFER_REROLL_LIMIT, OFFER_SIZE } from '../src/logic/types'
 import { todayStr } from '../src/logic/dates'
-import type { BoxState, IpDef } from '../src/logic/types'
+import type { BoxState, IpDef, Rarity } from '../src/logic/types'
 import * as db from './db'
 import * as auth from './auth'
 import {
@@ -39,14 +39,21 @@ export interface MeDto {
   drawsLeft: number
 }
 
-/** 明牌六选一的一批盒子（F1 交互） */
+/** 赌盒六选一的一批盒子（F1 交互）：内容不可见，只公开「系列」 */
+export interface OfferBoxDto {
+  /** 这个盒子属于哪个系列（档位）：玩家能看到的唯一线索 */
+  rarity: Rarity
+  opened: boolean
+  /** 已经拆开的盒子才回传里面是谁，用于回看自己拆了哪只 */
+  ipId?: string
+}
+
 export interface OfferDto {
-  /** 本批 id：抽卡时要回传，服务端据此校验「只能从这一批里选」 */
+  /** 本批 id：抽卡时要回传，服务端据此校验「只能从这一批里挑一个」 */
   offerId: string
-  ids: string[]
-  opened: string[]
+  boxes: OfferBoxDto[]
   rerollsLeft: number
-  /** 首抽未完成时只允许选引导款（保住 F6 首抽必得 000） */
+  /** 首抽未完成时整批都是引导款（挑哪只都是 №000） */
   firstDrawOnly: boolean
 }
 
@@ -231,7 +238,7 @@ export function createApiHandler(options: ApiOptions) {
     }
 
     // 非换批：没有 / 已拆完 → 新开一批（换批额度重置）；否则原样返回（保留已拆状态）
-    if (!current || isOfferExhausted(current.ids, current.opened)) {
+    if (!current || isOfferExhausted(current.ids.length, current.opened.length)) {
       if (drawsLeftOf(supply) <= 0) throw noDrawsError()
       const fresh = db.createOffer(database, {
         id: randomBytes(16).toString('hex'),
@@ -248,8 +255,15 @@ export function createApiHandler(options: ApiOptions) {
 
   const toOfferDto = (row: db.OfferRow, box: BoxState): OfferDto => ({
     offerId: row.id,
-    ids: row.ids,
-    opened: row.opened,
+    boxes: row.ids.map((id, i) => {
+      const ip = pool.find((p) => p.id === id)
+      const opened = row.opened.includes(i)
+      return {
+        rarity: ip?.rarity ?? 'street',
+        opened,
+        ...(opened ? { ipId: id } : {}),
+      }
+    }),
     rerollsLeft: row.rerolls_left,
     firstDrawOnly: !box.firstDrawDone,
   })
@@ -257,35 +271,57 @@ export function createApiHandler(options: ApiOptions) {
   const handleDraw = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const userId = requireUser(req, res)
     if (!userId) return
-    const body = (await readJsonBody(req, 8192, true)) as { offerId?: string; pickId?: string }
+    const body = (await readJsonBody(req, 8192, true)) as { offerId?: string; pickIndex?: number }
     const supply = db.ensureSupplyToday(database, userId, today())
     const box = db.getBoxState(database, userId) ?? createBoxState()
 
-    // —— 明牌六选一：玩家从当批里自己挑一只 ——
-    // 校验顺序很关键：先判「这只能不能拆」，再判「还有没有次数」，
+    // —— 赌盒六选一：玩家挑了当批第 N 个盒子 ——
+    // 校验顺序很关键：先判「这个盒子能不能拆」，再判「还有没有次数」，
     // 否则次数为 0 时会先把「已拆过 / 批次失效」这些明确语义吞成一句「补给用完」。
-    if (body.offerId && body.pickId) {
+    if (body.offerId && Number.isInteger(body.pickIndex)) {
+      const idx = body.pickIndex as number
       const offer = db.getOffer(database, userId, today())
       if (!offer || offer.id !== body.offerId) {
         throw new HttpError(400, '这一批盒子已失效，请重新取一批', 'OFFER_STALE')
       }
-      if (!offer.ids.includes(body.pickId)) {
-        throw new HttpError(400, '这只不在当前这一批里', 'PICK_NOT_IN_OFFER')
+      if (idx < 0 || idx >= offer.ids.length) {
+        throw new HttpError(400, '没有这个盒子', 'PICK_NOT_IN_OFFER')
       }
-      if (offer.opened.includes(body.pickId)) {
-        throw new HttpError(409, '这只已经拆过了，换一只吧', 'PICK_ALREADY_OPENED')
+      if (offer.opened.includes(idx)) {
+        throw new HttpError(409, '这个盒子已经拆过了，换一个吧', 'PICK_ALREADY_OPENED')
       }
       if (drawsLeftOf(supply) <= 0) throw noDrawsError()
-      const ip = pool.find((p) => p.id === body.pickId)
+      const ip = pool.find((p) => p.id === offer.ids[idx])
       if (!ip || ip.status !== 'ready') {
         throw new HttpError(400, '这只还没上架', 'PICK_NOT_READY')
       }
-      // 首抽：只允许引导款（保住 F6 首抽必得 000）
+      // 首抽：整批都是引导款，这里再兜一层（保住 F6 首抽必得 000）
       if (!box.firstDrawDone && ip.rarity !== 'guide') {
         throw new HttpError(409, '第一只先领走老皮吧（新手必得）', 'FIRST_DRAW_GUIDE_ONLY')
       }
 
       const next = nextStateAfter(box, ip.rarity)
+
+      // 首抽批 / 保底批是「整批同一档」——这是为了保证「赌哪只都兑现」。
+      // 但如果不处理，玩家把剩下 5 个也拆了就等于白拿 6 张同档卡，经济体系会被击穿。
+      // 所以在拆掉第一个之后，把还没拆的那几个换回常规批（已拆的那个原样保留）。
+      const rarityOf = (id: string) => pool.find((p) => p.id === id)?.rarity
+      const batchRarity = rarityOf(offer.ids[0])
+      const sameTierBatch =
+        batchRarity !== undefined && offer.ids.every((id) => rarityOf(id) === batchRarity)
+      let refreshedIds: string[] | null = null
+      if (sameTierBatch && offer.ids.length - offer.opened.length > 1) {
+        const normal = buildOffer(
+          { ...next, firstDrawDone: true, pitySmall: 0, pityBig: 0, pityHard: 0 },
+          pool,
+          secureRng,
+        )
+        let k = 0
+        refreshedIds = offer.ids.map((id, i) =>
+          i === idx || offer.opened.includes(i) ? id : normal[k++] ?? id,
+        )
+      }
+
       const nextSupply: db.SupplyRow = {
         last_login_date: supply.last_login_date,
         daily_draw_used: 1,
@@ -305,7 +341,8 @@ export function createApiHandler(options: ApiOptions) {
           shareDrawUsed: !!nextSupply.share_draw_used,
           drawsBonus: nextSupply.draws_bonus,
         })
-        db.markOfferOpened(database, offer.id, ip.id)
+        db.markOfferOpened(database, offer.id, idx)
+        if (refreshedIds) db.updateOfferIds(database, offer.id, refreshedIds)
         database.exec('COMMIT')
       } catch (err) {
         database.exec('ROLLBACK')

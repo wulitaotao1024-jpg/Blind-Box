@@ -2023,122 +2023,130 @@
 }
 .toast--error { color: #ff9f9f; border-color: rgba(255, 90, 90, 0.35); }
 
-/* ========== 明牌六选一（F1 互动抽盒：摊 6 只 → 自己挑一只 → 再开） ========== */
+/* ========== 开盒台（故事末帧 = 6 个封着的盒子，只看得到系列，自己赌一只） ========== */
 /* 与末帧/揭晓屏同源的黄昏渐变，保证「推门—摊盒—开盒—揭晓」是一条连续的视觉线 */
-.offer {
+.table {
   position: fixed;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* 不用 justify-content:center —— 内容比视口高时（手机横放）居中会把顶部裁掉且滚不上去。
-     改成 flex-start + 子元素 margin:auto 0：装得下就居中，装不下就顶部对齐、可滚到底 */
+  /* 不用 justify-content:center —— 内容比视口高时（手机横放）居中会把顶部裁掉且滚不上去 */
   justify-content: flex-start;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   text-align: center;
-  padding: max(18px, env(safe-area-inset-top)) 18px calc(18px + var(--safe-b));
+  /* 顶部留出右上角登录药丸的高度：否则窄屏上标题会被那个药丸压住 */
+  padding: max(76px, calc(env(safe-area-inset-top) + 64px)) 18px calc(18px + var(--safe-b));
   background:
     radial-gradient(58% 40% at 50% 66%, rgba(255, 220, 160, 0.28), transparent 70%),
     radial-gradient(90% 60% at 50% 112%, rgba(255, 150, 100, 0.22), transparent 66%),
     linear-gradient(180deg, #241a3e 0%, #3a2557 32%, #6b3a63 60%, #a05a68 82%, #d97a56 100%);
 }
-.offer__inner {
-  width: min(560px, 100%);
+.table__inner {
+  width: min(620px, 100%);
   margin: auto 0; /* 上下 auto：装得下就垂直居中，装不下退回顶部对齐 */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 13px;
-  animation: rise 0.45s ease both;
+  animation: rise 0.5s ease both;
 }
-.offer__title {
-  font-size: clamp(19px, 5.4vw, 26px);
+.table__title {
+  margin: 0;
+  font-size: clamp(19px, 4.9vw, 26px);
   font-weight: 900;
   letter-spacing: 0.16em;
   color: #fff6e8;
   text-shadow: 0 2px 14px rgba(46, 18, 56, 0.45);
 }
-.offer__sub {
-  font-size: 12.5px;
-  line-height: 1.6;
-  letter-spacing: 0.06em;
-  color: rgba(255, 244, 228, 0.85);
+.table__sub {
+  margin: 0;
+  max-width: 30em;
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: 0.08em;
+  color: rgba(255, 244, 228, 0.76);
 }
-.offer__grid {
+
+/* —— 6 个盒子 —— */
+.table__grid {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(8px, 2.4vw, 14px);
+  gap: 10px;
+  margin-top: 2px;
 }
-.offer__card {
-  --lid-h: clamp(20px, 3.2vw, 27px); /* 盒盖高度：随卡片一起长，桌面封条上的字才看得清 */
+.table__cell {
   position: relative;
-  min-height: 0; /* 网格项默认 min-height:auto 会被立绘撑高 */
-  aspect-ratio: 1 / 1.26;
+  min-height: 0; /* 网格项默认 min-height:auto 会被里面的绝对定位内容撑高 */
+  aspect-ratio: 1 / 1.16;
   overflow: hidden;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: radial-gradient(120% 90% at 50% 10%, var(--bg-3), var(--bg-2));
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  perspective: 700px; /* 让盒盖翻起时有近大远小的立体感 */
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  border: 1px solid rgba(255, 246, 224, 0.14);
+  background:
+    radial-gradient(120% 90% at 50% 8%, rgba(255, 255, 255, 0.08), transparent 62%),
+    linear-gradient(180deg, rgba(28, 20, 46, 0.72), rgba(16, 11, 26, 0.86));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
-.offer__card:not([disabled]):hover {
+.table__cell:hover {
   transform: translateY(-3px);
-  border-color: rgba(255, 214, 150, 0.55);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 214, 150, 0.3);
+  border-color: rgba(255, 246, 224, 0.3);
 }
-.offer__card:not([disabled]):active { transform: scale(0.97); }
-.offer__card[disabled] { cursor: default; }
-/* 立绘铺满格子，只给顶部盒盖让位；格子高度只由 aspect-ratio 决定，6 格才排得齐 */
-.offer__card .portrait {
-  position: absolute;
-  inset: var(--lid-h) 0 0;
-  width: auto;
-  height: auto;
-  border-radius: 0;
+/* 悬停/钉住的那一格：金边高亮，和下面预览条对上眼 */
+.table__cell.is-peek {
+  border-color: rgba(255, 214, 150, 0.72);
+  box-shadow: 0 0 0 1px rgba(255, 214, 150, 0.32), 0 12px 26px rgba(0, 0, 0, 0.42);
 }
-/* 盒盖：未拆时压在顶边（金色封条），拆过之后掀开 —— 一眼看出哪只已经开过 */
-.offer__lid {
+.table__cell.is-dim { opacity: 0.5; cursor: default; }
+.table__cell.is-dim:hover { transform: none; }
+.table__cell.is-opened { cursor: default; border-color: rgba(255, 214, 150, 0.3); }
+.table__cell.is-opened:hover { transform: none; }
+
+/* 盒盖：封条。拆过之后掀开 —— 一眼看出哪个已经开过 */
+.table__lid {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 4;
-  height: var(--lid-h);
+  height: 22px;
   display: grid;
   place-items: center;
   border-radius: 13px 13px 3px 3px;
   background: linear-gradient(180deg, #ffe1a6 0%, #f0bd5e 58%, #d79c3c 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   transform-origin: top center;
-  /* 未拆时不给任何 transform：一旦挂上 rotateX(0) 就会被丢进 3D 合成层，
-     1x 屏上封条字会发虚。只在拆开时才加变换 */
-  transition: transform 0.5s cubic-bezier(0.34, 1.26, 0.64, 1), opacity 0.4s ease,
-    box-shadow 0.4s ease;
+  transition: transform 0.5s cubic-bezier(0.34, 1.26, 0.64, 1), opacity 0.4s ease;
 }
-.offer__lid-txt {
-  font-size: clamp(9px, 1vw, 11.5px);
+.table__lid i {
+  font-style: normal;
+  font-size: 9.5px;
   font-weight: 900;
   letter-spacing: 0.22em;
   color: #4a3305;
 }
-.offer__card.is-opened .offer__lid {
-  transform: rotateX(-74deg); /* 盖子掀开着 */
+.table__cell.is-opened .table__lid {
+  transform: rotateX(-74deg);
   opacity: 0.4;
   box-shadow: none;
 }
-.offer__card.is-opened {
-  border-color: rgba(255, 214, 150, 0.34);
-}
-.offer__card.is-opened .portrait {
-  filter: saturate(0.45) brightness(0.7);
-}
-/* 已拆的戳：居中压在立绘上 */
-.offer__stamp {
+/* 封着的礼物盒：固定尺寸 + 缩放，6 格才排得齐 */
+.table__box {
   position: absolute;
-  z-index: 3;
+  inset: 22px 0 0;
+  display: grid;
+  place-items: center;
+}
+.table__box .mystery-box { transform: scale(0.6); }
+.table__cell .portrait { position: absolute; inset: 22px 0 0; border-radius: 0; }
+
+/* 已拆的戳 */
+.table__stamp {
+  position: absolute;
+  z-index: 5;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-9deg);
@@ -2150,96 +2158,192 @@
   white-space: nowrap;
   color: #ffe6b4;
   border: 1.5px dashed rgba(255, 214, 150, 0.75);
-  background: rgba(30, 18, 8, 0.5);
+  background: rgba(30, 18, 8, 0.55);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
-/* 首抽锁定：非引导款压暗一档，配合 title 说明为什么点不动 */
-.offer__card.is-locked .portrait {
-  filter: saturate(0.5) brightness(0.78);
-}
-.offer__badge {
+
+/* —— 系列标签（唯一公开的线索） —— */
+.table__series {
   position: absolute;
-  z-index: 3;
-  top: calc(var(--lid-h) + 4px);
-  right: 4px;
-  pointer-events: none;
+  z-index: 6;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: rgba(12, 8, 20, 0.62);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  cursor: pointer;
 }
-/* 格子窄：稀有度徽章只留中文标签，英文副标隐掉 */
-.offer__badge .badge {
-  padding: 2px 7px;
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  gap: 0;
+.table__series em {
+  font-style: normal;
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  opacity: 0.72;
 }
-.offer__badge .badge__en { display: none; }
-.offer__info {
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.table__series--guide { color: #ffd76a; }
+.table__series--street { color: #d3dae4; }
+.table__series--limited { color: #5fe8d4; }
+.table__series--heat { color: #ff8f5c; }
+.table__series--ghost { color: #c49aff; }
+
+/* —— 系列预览条：悬停/钉住时换成这一系列的可能名单 —— */
+.peek {
+  width: 100%;
+  min-height: 96px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 18px 6px 6px;
-  background: linear-gradient(180deg, transparent, rgba(10, 8, 16, 0.86) 62%);
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 246, 224, 0.16);
+  background: rgba(12, 8, 20, 0.3);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
-.offer__name {
+.peek.is-on {
+  border-style: solid;
+  border-color: rgba(255, 214, 150, 0.32);
+  background: rgba(12, 8, 20, 0.52);
+}
+.peek__hint {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 244, 228, 0.6);
+}
+.peek__hint span { color: #ffe0a8; }
+.peek__title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
   font-size: 11.5px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #fff3e2;
+  letter-spacing: 0.1em;
+  color: #ffeccd;
+}
+.peek__title em {
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+}
+.peek__title span {
+  font-weight: 500;
+  color: rgba(255, 244, 228, 0.66);
+}
+.peek__row {
+  display: flex;
+  gap: 9px;
+  /* safe center：装得下就居中，装不下（系列人多）退回左对齐可横滑，不会把左边裁掉 */
+  justify-content: safe center;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.peek__item {
+  flex: 0 0 auto;
+  width: 46px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.peek__thumb {
+  position: relative;
+  width: 46px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 246, 224, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+}
+.peek__thumb .portrait { position: absolute; inset: 0; border-radius: 0; }
+.peek__item figcaption {
+  max-width: 46px;
+  font-size: 8.5px;
+  line-height: 1.25;
+  color: rgba(255, 244, 228, 0.82);
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.offer__no {
-  font-size: 9.5px;
-  letter-spacing: 0.14em;
-  color: rgba(255, 236, 214, 0.7);
+.peek__item figcaption i {
+  display: block;
+  font-style: normal;
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
 }
-.offer__actions {
+
+/* —— 底部 —— */
+.table__actions {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 10px;
-  margin-top: 2px;
 }
-.offer__draws {
+.table__draws {
+  margin: 0;
   font-size: 11.5px;
   letter-spacing: 0.1em;
-  color: rgba(255, 244, 228, 0.78);
+  color: rgba(255, 244, 228, 0.74);
 }
 /* 黄昏背景上提亮次级按钮文字（--ink-faint 在亮背景上不可读） */
-.offer .btn--dim { color: rgba(255, 243, 226, 0.92); }
-.offer .btn--ghost {
+.table .btn--dim { color: rgba(255, 243, 226, 0.92); }
+.table .btn--ghost {
   color: #fff3e2;
   border-color: rgba(255, 243, 226, 0.45);
   background: rgba(255, 255, 255, 0.08);
 }
+
 @media (max-width: 420px) {
-  .offer__grid { gap: 8px; }
-  .offer__card { aspect-ratio: 1 / 1.2; }
-  .offer__name { font-size: 10.5px; }
-  .offer__card { --lid-h: 20px; }
-  .offer .btn { padding: 11px 18px; letter-spacing: 0.08em; }
+  .table__grid { gap: 8px; }
+  .table__cell { aspect-ratio: 1 / 1.18; }
+  .table__title { font-size: 18px; letter-spacing: 0.12em; }
+  .table__series { font-size: 9.5px; padding: 2px 7px; }
+  .table__series em { display: none; }
+  .table .btn { padding: 11px 18px; letter-spacing: 0.08em; }
 }
 @media (min-width: 768px) {
-  .offer__inner { width: min(620px, 100%); }
-  .offer__card { aspect-ratio: 1 / 1.34; }
-  .offer__name { font-size: 13px; }
-  .offer__no { font-size: 10.5px; }
+  .table__inner { width: min(820px, 100%); }
+  /* 宽屏把 6 个盒子摊成一排（像货架），比 3×2 的大块头更像「六个盒子摆在你面前」 */
+  .table__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  .table__cell { aspect-ratio: 1 / 1.1; }
+  .table__series { font-size: 10.5px; }
+  .table__series em { display: none; }
 }
-/* 横屏矮屏（手机横放）：6 只摊成一行，一屏放得下 6 格 + 底部按钮 */
-@media (orientation: landscape) and (max-height: 520px) {
+/* 横屏矮屏（手机横放）：6 个盒子摊成一行，一屏放得下 + 底部按钮 */
+@media (orientation: landscape) and (max-height: 560px) {
   /* 宽度必须扣掉左右 18px padding，否则 96vw 会比可用宽度宽一点点 → 横向溢出 */
-  .offer__inner { width: min(830px, calc(100vw - 40px)); gap: 8px; }
-  .offer__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-  .offer__card { aspect-ratio: 1 / 1.26; }
-  .offer__title { font-size: 16px; letter-spacing: 0.12em; }
-  .offer__sub { font-size: 11px; }
-  .offer__name { font-size: 10px; }
-  .offer__no { font-size: 9px; }
-  .offer .btn { padding: 9px 16px; font-size: 13px; }
+  .table { padding-top: 14px; }
+  .table__inner { width: min(860px, calc(100vw - 40px)); gap: 6px; }
+  .table__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .table__cell { aspect-ratio: 1 / 1.02; }
+  .table__title { font-size: 15px; letter-spacing: 0.1em; }
+  .table__sub { font-size: 10.5px; line-height: 1.4; }
+  .table__lid { height: 18px; }
+  .table__lid i { font-size: 8.5px; }
+  .table__box { inset: 18px 0 0; }
+  .table__box .mystery-box { transform: scale(0.52); }
+  .table__cell .portrait { inset: 18px 0 0; }
+  .peek { min-height: 56px; padding: 5px 10px; gap: 4px; }
+  .peek__thumb { width: 28px; height: 32px; }
+  .peek__item { width: 28px; }
+  .peek__item figcaption { font-size: 7.5px; }
+  .table .btn { padding: 8px 14px; font-size: 12.5px; }
 }

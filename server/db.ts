@@ -43,13 +43,13 @@ export interface SessionRow {
   expires_at: number
 }
 
-/** 明牌六选一的「当批盒子」：一天一批（换批即替换），拆过的那只记在 opened 里 */
+/** 赌盒六选一的「当批盒子」：一天一批（换批即替换），拆过哪几个记在 opened 里（下标） */
 export interface OfferRow {
   id: string
   user_id: string
   day: string
-  ids: string[] // 本批 6 个 IP 编号
-  opened: string[] // 本批已拆开的编号
+  ids: string[] // 本批 6 个盒子里各装谁（只服务端可见，客户端拿到的是「系列」）
+  opened: number[] // 本批已拆开的下标（用下标而非编号：首抽整批都是 000，编号会重样）
   rerolls_left: number
   created_at: number
 }
@@ -273,23 +273,33 @@ export function updateSupply(
 
 // —— 会话 ——
 
-// —— 明牌六选一：当批盒子 ——
+// —— 赌盒六选一：当批盒子 ——
 
 const rowToOffer = (row: Record<string, unknown>): OfferRow => {
-  const parse = (raw: unknown): string[] => {
+  const parseList = (raw: unknown): unknown[] => {
     try {
       const v = JSON.parse(String(raw ?? '[]'))
-      return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+      return Array.isArray(v) ? v : []
     } catch {
       return []
+    }
+  }
+  const ids = parseList(row.ids).filter((x): x is string => typeof x === 'string')
+  // opened 存的是下标；旧数据存的是编号，这里按 ids 换算一下，保证升库后不丢状态
+  const opened: number[] = []
+  for (const x of parseList(row.opened)) {
+    if (typeof x === 'number' && Number.isInteger(x) && x >= 0 && x < ids.length) opened.push(x)
+    else if (typeof x === 'string') {
+      const i = ids.indexOf(x)
+      if (i >= 0) opened.push(i)
     }
   }
   return {
     id: String(row.id),
     user_id: String(row.user_id),
     day: String(row.day),
-    ids: parse(row.ids),
-    opened: parse(row.opened),
+    ids,
+    opened: [...new Set(opened)].sort((a, b) => a - b),
     rerolls_left: Number(row.rerolls_left),
     created_at: Number(row.created_at),
   }
@@ -333,19 +343,28 @@ export function createOffer(
   }
 }
 
-/** 标记本批里某只已被拆开（幂等） */
-export function markOfferOpened(db: DatabaseSync, offerId: string, ipId: string): OfferRow | undefined {
+/** 标记本批里第 index 个盒子已被拆开（幂等） */
+export function markOfferOpened(db: DatabaseSync, offerId: string, index: number): OfferRow | undefined {
   const cur = db.prepare('SELECT * FROM offers WHERE id = $id').get({ id: offerId }) as
     | Record<string, unknown>
     | undefined
   if (!cur) return undefined
   const row = rowToOffer(cur)
-  if (!row.opened.includes(ipId)) row.opened.push(ipId)
+  if (!row.opened.includes(index)) row.opened.push(index)
+  row.opened.sort((a, b) => a - b)
   db.prepare('UPDATE offers SET opened = $opened WHERE id = $id').run({
     opened: JSON.stringify(row.opened),
     id: offerId,
   })
   return row
+}
+
+/** 只换内容、不动已拆记录（首抽/保底那批拆掉一个后，把剩下几个换回常规批） */
+export function updateOfferIds(db: DatabaseSync, offerId: string, ids: string[]): void {
+  db.prepare('UPDATE offers SET ids = $ids WHERE id = $id').run({
+    ids: JSON.stringify(ids),
+    id: offerId,
+  })
 }
 
 export function createSession(

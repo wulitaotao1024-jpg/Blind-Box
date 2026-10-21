@@ -1,4 +1,4 @@
-import type { BoxState, DrawResult } from '../logic/types'
+import type { BoxState, DrawResult, Rarity } from '../logic/types'
 
 // 盒隙前端 API 客户端：唯一与后端 /api 通信的入口（同源，cookie 自动随行）。
 // 后端契约见 docs/plans/2026-10-20-login-system.md §3.3。
@@ -31,12 +31,19 @@ export interface MeDto {
 }
 
 /** 明牌六选一：服务端发的一批盒子（6 只编号 + 已拆记录 + 换批额度） */
+export interface OfferBoxDto {
+  /** 这个盒子属于哪个系列（档位）：玩家能看到的唯一线索 */
+  rarity: Rarity
+  opened: boolean
+  /** 已经拆开的盒子才回传里面是谁 */
+  ipId?: string
+}
+
 export interface OfferDto {
   offerId: string
-  ids: string[]
-  opened: string[]
+  boxes: OfferBoxDto[]
   rerollsLeft: number
-  /** 首抽：这一批里只有引导款（№000）可以拆 */
+  /** 首抽：整批都是引导款（挑哪只都是 №000） */
   firstDrawOnly: boolean
 }
 
@@ -135,8 +142,8 @@ export const api = {
     return req<OfferDto>('/api/offer', { method: 'POST', body: JSON.stringify(input ?? {}) })
   },
 
-  /** 抽一发：不传 pick 走旧随机抽；传 pick 表示从这一批里自己挑的那只 */
-  async draw(pick?: { offerId: string; pickId: string }): Promise<DrawDto> {
+  /** 抽一发：不传 pick 走旧随机抽；传 pick 表示从这一批里赌的第 N 个盒子 */
+  async draw(pick?: { offerId: string; pickIndex: number }): Promise<DrawDto> {
     return req<DrawDto>('/api/draw', { method: 'POST', body: JSON.stringify(pick ?? {}) })
   },
 
