@@ -1,0 +1,17 @@
+[Unit]
+Description=BLINDGAP API (Node, node:sqlite)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/blindgap
+ExecStart=/usr/bin/node --experimental-sqlite /opt/blindgap/dist-server/index.js
+Environment=BLINDGAP_DB=/opt/blindgap/data/api.db
+Environment=BLINDGAP_API_PORT=8787
+Environment=BLINDGAP_API_HOST=127.0.0.1
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
