@@ -173,6 +173,9 @@
 .landing {
   position: fixed;
   inset: 0;
+  /* 移动浏览器地址栏会吃掉可视高度：优先用动态视口，旧内核退回 100vh */
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden; /* 首页禁止滚动 */
   background: var(--bg);
   text-align: center;
@@ -289,6 +292,10 @@
 
 /* ---------- 双扇大门（深色魔法风，居中矗立，圆拱顶部完整露出） ---------- */
 .doors {
+  /* 门的两把尺子：宽度（单扇）与「天空」高度（门顶之上留给夜空+标题的净空）。
+     各处断点只改这两个变量，门扇/中缝/圆拱会一起等比缩放，不会出现「门变矮但中缝还伸到天上」这类错位 */
+  --door-w: min(46%, 430px);
+  --sky: 7%;
   position: absolute;
   inset: 0;
   display: flex;
@@ -302,11 +309,13 @@
 }
 .doors__leaf {
   position: relative;
-  width: min(46%, 430px);
-  height: 93%;
+  width: var(--door-w);
+  height: calc(100% - var(--sky));
   border: none;
   padding: 0;
   cursor: pointer;
+  /* 门板/把手一律裁在门扇轮廓内，避免小屏上门框凹槽溢出到夜空里 */
+  overflow: hidden;
   /* 胡桃木配色（v0.2.5 原版，用户要求从深棕黑还原）：暖棕三阶 + 木纹 + 顶部暖光 */
   background:
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 84px),
@@ -402,7 +411,7 @@
 /* 中缝光 */
 .doors__seam {
   position: absolute;
-  top: 7%; /* 与门扇顶部（93% 高）对齐，不伸进上方的天空里 */
+  top: var(--sky); /* 与门扇顶部对齐（= 天空净空），不伸进上方的夜空里 */
   bottom: 0;
   left: 50%;
   width: 4px;
@@ -1564,6 +1573,25 @@
   .reveal__card { padding: 18px 16px; }
 }
 
+/* ---------- 门的响应式尺寸（平板 / 手机） ----------
+   竖屏手机原先 93% 高 + 46% 宽，门被撑成「一整面墙」：左右只剩十几像素的暮色，
+   拱顶顶到顶部药丸，副标题正好被拱形弧线横切一刀。
+   改法：门高不写死，而是「视口 − 天空净空」，净空 = 标题块实测高 + 一条缝：
+   标题因此整体落在夜空里，拱门从它下面开始，两者不再打架。
+   门宽收到 42%，两侧暮色重新露出来；拱高 26% × 新门高 ≈ 单扇门宽 → 圆拱回归正圆的半椭圆。 */
+@media (max-width: 1024px) {
+  .doors {
+    --door-w: min(42%, 430px, 46vh); /* 46vh 兜住横屏平板：门不会被拉成宽扁的「牌坊」 */
+    --sky: calc(11vh + 198px); /* 平板标题块实测约 178px，+20px 缝 */
+  }
+}
+@media (max-width: 560px) {
+  .doors {
+    --door-w: min(42%, 430px, 46vh);
+    --sky: calc(11vh + 128px); /* 手机标题块实测 114px，+14px 缝 */
+  }
+}
+
 /* 超小屏（iPhone SE 等 ≤340px）：标题与盒子再缩一档，网格变密 */
 @media (max-width: 340px) {
   .landing__title { font-size: clamp(30px, 11vw, 40px); }
@@ -1573,9 +1601,22 @@
   .cell__name { font-size: 12px; }
   .reveal__name { font-size: 23px; }
 }
+/* 超小屏标题被放大到 11vw（块高 132px），天空净空同步加宽，否则副标题又贴到拱顶 */
+@media (max-width: 360px) {
+  .doors {
+    --door-w: min(43%, 430px, 46vh);
+    --sky: calc(11vh + 146px);
+  }
+}
 
 /* 横屏手机 / 超矮屏：压缩纵向间距，缩小盒子，防止内容被裁 */
 @media (orientation: landscape) and (max-height: 480px) {
+  /* 横屏纵向金贵，不预留天空（保持门落地到顶），改为按高度反推门宽，
+     否则 776×363 的门宽高比 2.1，看起来像一堵墙而不是门 */
+  .doors {
+    --door-w: min(30%, 430px, 42vh);
+    --sky: 7%;
+  }
   .landing__head { top: 4vh; }
   .landing__title { font-size: clamp(24px, 7vh, 40px); }
   .mystery-box { width: 92px; height: 74px; }
