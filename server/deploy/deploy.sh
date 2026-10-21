@@ -47,6 +47,9 @@ fi
 
 echo "==> [3/7] 拉取最新代码"
 cd "$APP_DIR"
+git fetch origin
+# 部署服务器上 npm install 可能改过 package-lock.json 等跟踪文件，先丢弃再快进合并，避免合并被本地改动阻塞
+git checkout -- . 2>/dev/null || true
 git pull --ff-only
 
 echo "==> [4/7] 安装依赖并构建（前端 + 服务端）"
