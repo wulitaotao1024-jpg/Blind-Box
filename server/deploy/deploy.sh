@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 #  BLINDGAP 账号系统后端 一键部署脚本
-#  用途：在 Lighthouse 服务器（/opt/blindgap）上部署 Node 后端
+#  用途：在 Lighthouse 服务器（/opt/blindbox）上部署 Node 后端
 #        并配置 nginx /api 反代 + systemd 常驻。
 #  用法：把本文件内容粘进服务器终端（OrcaTerm）回车执行，或
 #        scp 上去后 `sudo bash deploy.sh`。
@@ -9,7 +9,7 @@
 # ============================================================
 set -euo pipefail
 
-APP_DIR=/opt/blindgap
+APP_DIR=/opt/blindbox
 DATA_DIR="$APP_DIR/data"
 DB_PATH="$DATA_DIR/api.db"
 SERVICE_NAME=blindgap-api
